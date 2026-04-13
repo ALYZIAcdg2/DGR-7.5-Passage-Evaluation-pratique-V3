@@ -185,71 +185,76 @@ function calculerScore() {
     }
 }
 
-async function genererPDF() {
-    // On s'assure que le score est calculé
-    calculerScore();
+function genererPDF() {
+    const element = document.getElementById('document-to-print');
+    const btnArea = document.querySelector('.btn-area');
 
-    const data = {
-        nom_agent: document.getElementById('nom-agent').value,
-        prenom_agent: document.getElementById('prenom-agent').value,
-        nom_eval: document.getElementById('nom-eval').value,
-        prenom_eval: document.getElementById('prenom-eval').value,
-        fonction_eval: document.getElementById('fonction-eval').value,
-        date_eval: document.getElementById('date-eval').value,
-        lieu_eval: document.getElementById('lieu-eval').value,
-        points: parseInt(document.getElementById('points-result').textContent),
-        pourcentage: parseFloat(document.getElementById('percent-result').textContent),
-        status: document.getElementById('status-result').innerText
-    };
+    if (typeof html2pdf === "undefined") {
+        showAlert("Erreur : la librairie PDF n'est pas chargée.");
+        return;
+    }
 
-    // Appel au serveur Render pour générer le PDF parfait
-    const response = await fetch('/submit?action=download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+    if (btnArea) btnArea.style.display = 'none';
+
+    // Synchronisation forcée des données saisies
+    const inputs = element.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        if (input.type === 'checkbox' || input.type === 'radio') {
+            if (input.checked) {
+                input.setAttribute('checked', 'checked');
+            } else {
+                input.removeAttribute('checked');
+            }
+        } else {
+            input.setAttribute('value', (input.value || '').toUpperCase());
+        }
     });
 
-    if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `EVAL_DGR_${data.nom_agent.toUpperCase()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-    } else {
-        showAlert("Erreur lors de la génération du PDF par le serveur.");
-    }
+    const sigs = element.querySelectorAll('.sig-content');
+    sigs.forEach(sig => {
+        sig.innerHTML = sig.innerText.toUpperCase();
+    });
+
+    const nom = document.getElementById('nom-agent').value || "AGENT";
+
+    const opt = {
+        margin: [5, 5, 5, 5],
+        filename: `EVAL_DGR_${nom}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 1,
+            useCORS: true,
+            scrollX: 0,
+            scrollY: 0,
+            letterRendering: true
+        },
+        jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait'
+        }
+    };
+
+    html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+            if (btnArea) btnArea.style.display = 'block';
+        })
+        .catch(err => {
+            if (btnArea) btnArea.style.display = 'block';
+            console.error("Erreur PDF:", err);
+            showAlert("Erreur lors de la génération du PDF.");
+        });
 }
 
-async function envoyerEmail() {
-    calculerScore();
+function envoyerEmail() {
+    const nom = document.getElementById('nom-agent').value;
+    const score = document.getElementById('points-result').textContent;
+    const statusText = document.getElementById('status-result').innerText;
 
-    const data = {
-        nom_agent: document.getElementById('nom-agent').value,
-        prenom_agent: document.getElementById('prenom-agent').value,
-        nom_eval: document.getElementById('nom-eval').value,
-        prenom_eval: document.getElementById('prenom-eval').value,
-        fonction_eval: document.getElementById('fonction-eval').value,
-        date_eval: document.getElementById('date-eval').value,
-        lieu_eval: document.getElementById('lieu-eval').value,
-        points: parseInt(document.getElementById('points-result').textContent),
-        pourcentage: parseFloat(document.getElementById('percent-result').textContent),
-        status: document.getElementById('status-result').innerText
-    };
-
-    showAlert("Envoi du mail en cours...");
-
-    const response = await fetch('/submit?action=email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-
-    if (response.ok) {
-        showAlert("✅ Email envoyé avec succès à Xavier Oliere !");
-    } else {
-        showAlert("❌ Erreur lors de l'envoi de l'email.");
-    }
+    const sujet = encodeURIComponent(`Évaluation DGR 7.5 - ${nom}`);
+    const corps = encodeURIComponent(`Agent : ${nom}\nScore : ${score}/100\nRésultat : ${statusText}`);
+    window.location.href = `mailto:xavier.oliere@alyzia.com?subject=${sujet}&body=${corps}`;
 }

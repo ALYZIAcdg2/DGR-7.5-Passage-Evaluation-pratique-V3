@@ -1,300 +1,295 @@
 :root { 
     --orange: #EF7D00; 
-    --black: #000000;
-    --gray-bg: #f2f2f2;
+    --bordeaux: #7a1212; /* Conservé pour les titres de signature si souhaité, sinon changer en var(--orange) */
 }
 
-/* --- RESET & BASE --- */
-* {
-    box-sizing: border-box;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-}
-
+/* --- STYLES GÉNÉRAUX --- */
 body { 
-    font-family: 'Segoe UI', Arial, sans-serif; 
-    background: #525659; 
+    font-family: Arial, sans-serif; 
+    background: #ccc; 
     padding: 20px; 
     margin: 0;
 }
 
 .container { 
-    max-width: 800px; 
+    max-width: 850px; 
     margin: auto; 
     background: white; 
-    padding: 10mm; 
-    border: 1px solid var(--black);
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    padding: 15px; 
+    border: 1px solid #000; 
+    box-sizing: border-box;
 }
 
 /* --- EN-TÊTE --- */
 .main-header {
     display: flex;
-    border: 1.5px solid var(--black);
-    margin-bottom: 4mm;
+    border: 1px solid #000;
+    margin-bottom: 5px !important;
 }
 
 .logo-box {
-    width: 30%;
-    border-right: 1.5px solid var(--black);
-    padding: 5px;
+    width: 35%;
+    border-right: 1px solid #000;
+    padding: 5px !important;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .logo-box img {
-    max-width: 100%;
-    max-height: 45px;
+    max-height: 50px;
+    width: auto;
 }
 
 .title-box {
-    width: 70%;
+    width: 65%;
     text-align: center;
 }
 
 .title-box h1 {
     margin: 0;
-    font-size: 14pt;
+    font-size: 1.1rem !important;
     color: var(--orange);
-    border-bottom: 1.5px solid var(--black);
-    padding: 3px 0;
-    text-transform: uppercase;
+    border-bottom: 1px solid #000;
+    padding: 2px !important;
 }
 
 .title-box h2 {
-    margin: 0;
-    font-size: 11pt;
-    padding: 5px 0;
+    margin: 2px 0 !important;
+    font-size: 0.9rem !important;
 }
 
 /* --- BLOCS D'INFORMATIONS --- */
-.form-block { 
-    margin-bottom: 3mm; 
-    border: 1.5px solid var(--black); 
-}
-
-.block-header { 
-    background: var(--orange); 
-    color: white; 
-    text-align: center; 
-    padding: 3px; 
-    font-weight: bold; 
-    font-size: 10pt; 
-    text-transform: uppercase;
-}
-
+.form-block { margin-bottom: 10px; border: 1px solid #000; }
+.block-header { background: var(--orange); color: white; text-align: center; padding: 4px; font-weight: bold; font-size: 0.9rem; }
 .block-content { display: grid; }
 .grid-2 { grid-template-columns: 1fr 1fr; }
-.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1.2fr; }
 
-.input-group { border-right: 1px solid var(--black); }
+.input-group { border-right: 1px solid #000; }
 .input-group:last-child { border-right: none; }
+.input-group label { display: block; background: #ddd; text-align: center; font-size: 0.75rem; font-weight: bold; padding: 2px; border-bottom: 1px solid #000; }
+.input-group input { width: 100%; border: none; padding: 8px; box-sizing: border-box; text-align: center; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
 
-.input-group label { 
-    display: block; 
-    background: var(--gray-bg); 
-    text-align: center; 
-    font-size: 8pt; 
-    font-weight: bold; 
-    padding: 2px; 
-    border-bottom: 1px solid var(--black); 
-}
+/* --- RÉSULTATS ET VALIDATION --- */
+.result-container, .info-block { display: flex; border: 1px solid #000; margin-bottom: 8px; }
+.result-sidebar, .info-sidebar { background: var(--orange); color: white; width: 28%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 5px; font-weight: bold; font-size: 0.9rem; border-right: 1px solid #000; }
+.result-data, .info-content { width: 72%; padding: 0; }
 
-.input-group input { 
-    width: 100%; 
-    border: none; 
-    padding: 5px; 
-    text-align: center; 
-    font-size: 10pt; 
-    font-weight: bold; 
-    text-transform: uppercase;
-}
-
-/* --- RÉSULTATS & VALIDATION --- */
-.result-container, .info-block { 
-    display: flex; 
-    border: 1.5px solid var(--black); 
-    margin-bottom: 3mm; 
-}
-
-.result-sidebar, .info-sidebar { 
-    background: var(--orange); 
-    color: white; 
-    width: 25%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    text-align: center; 
-    padding: 5px; 
-    font-weight: bold; 
-    font-size: 9pt; 
-    border-right: 1.5px solid var(--black); 
-}
-
-.result-data, .info-content { width: 75%; }
-
-.res-row { display: flex; border-bottom: 1px solid var(--black); }
+.res-row { display: flex; border-bottom: 1px solid #000; }
 .res-row:last-child { border-bottom: none; }
-
 .res-row span {
-    width: 50%;
-    padding: 4px;
-    border-right: 1px solid var(--black);
-    font-size: 9pt;
+    width: 45%;
+    padding: 5px;
+    border-right: 1px solid #000;
+    font-size: 0.85rem;
     font-weight: bold;
-    background: var(--gray-bg);
-}
-
-.res-row input { 
-    width: 50%; 
-    border: none; 
-    padding: 2px; 
-    font-size: 10pt; 
-    font-weight: bold; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
 }
+.res-row input { width: 55%; border: none; padding: 4px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; text-align: center; }
+.score-display { width: 55%; text-align: center; padding: 5px; font-size: 0.95rem; }
 
-.score-display { 
-    width: 50%; 
-    text-align: center; 
-    padding: 4px; 
-    font-size: 10pt; 
-    font-weight: bold;
-}
+.info-content { padding: 5px; font-size: 0.8rem; line-height: 1.15; }
+.small-text { font-size: 0.68rem; line-height: 1.1; }
 
 /* --- QUESTIONNAIRE --- */
 .q-title {
-    background: var(--orange);
-    color: white;
-    padding: 3px 10px;
-    font-size: 11pt;
-    margin: 4mm 0 2mm 0;
+    border-bottom: 2px solid var(--orange);
+    color: var(--orange);
+    margin: 8px 0 2px 0;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding-bottom: 2px;
 }
-
 .question-card {
-    margin-bottom: 3mm;
+    background: transparent;
+    padding: 2px 0 0 0;
+    margin-bottom: 6px;
+    border: none !important;
 }
 
 .question-card p {
-    margin: 0 0 2mm 0;
+    display: block;
+    width: 100%;
+    border-bottom: 2px solid var(--orange) !important;
+    padding-bottom: 3px;
+    margin: 0 0 4px 0;
     font-weight: bold;
-    font-size: 9.5pt;
-    border-bottom: 1px solid var(--orange);
-    padding-bottom: 2px;
 }
 
 .question-flex-container {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
-.options-box { width: 80%; }
-.image-box { width: 15%; text-align: right; }
+.options-box { width: 75%; }
+.image-box { width: 20%; text-align: right; }
+.pictogram-img-right { width: 60px !important; height: auto; border: 1px solid #ccc; }
 
-.pictogram-img-right { 
-    width: 55px; 
-    height: auto; 
-    border: 1px solid var(--black); 
-}
+.question-card label { display: block; margin: 5px 0; cursor: pointer; font-size: 0.9rem; }
 
-.question-card label { 
-    display: block; 
-    margin: 3px 0; 
-    font-size: 9pt; 
-}
-
-/* --- SIGNATURES --- */
+/* --- SIGNATURES (STYLE ORANGE) --- */
 .signature-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 5mm;
-    border: 1.5px solid var(--black);
+    margin-top: 10px;
+    border: 2px solid #000;
 }
 
-.main-title-sig, .sub-title-sig {
-    background-color: var(--orange);
+.main-title-sig {
+    background-color: var(--orange); /* Changé en orange pour le style */
     color: white;
-    padding: 4px;
-    font-weight: bold;
+    border: 1px solid #000;
+    padding: 5px;
+    font-size: 1rem;
     text-align: center;
-    border: 1px solid var(--black);
+}
+
+.sub-title-sig {
+    background-color: var(--orange); /* Changé en orange pour le style */
+    color: white;
+    border: 1px solid #000;
+    padding: 4px;
+    width: 50%;
+    text-align: center;
+    font-size: 0.9rem;
 }
 
 .sig-zone {
-    border: 1px solid var(--black);
-    height: 50px;
-    width: 50%;
+    border: 1px solid #000;
+    height: 38px !important; /* Hauteur ajustée pour équilibre */
+    vertical-align: top;
+    padding: 0;
 }
 
 .sig-content {
     width: 100%;
     height: 100%;
     padding: 5px;
-    font-size: 9pt;
-    font-style: italic;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    box-sizing: border-box;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 /* --- BAS DE PAGE --- */
 .legal-notice-box {
     display: flex;
-    border: 1.5px solid var(--black);
-    margin-top: 4mm;
+    border: 2px solid #000;
+    margin-top: 10px;
 }
 
 .legal-text {
-    width: 80%;
+    width: 75%;
     padding: 4px;
-    font-size: 6.5pt;
-    line-height: 1.2;
-    border-right: 1px solid var(--black);
+    font-size: 0.6rem !important;
+    line-height: 1.1;
+    border-right: 1px solid #000;
 }
 
 .legal-info {
-    width: 20%;
+    width: 25%;
     padding: 4px;
-    font-size: 7pt;
+    font-size: 0.6rem !important;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    line-height: 1.1;
 }
 
-/* --- BOUTONS (Masqués à l'impression) --- */
-.btn-area { 
-    text-align: center; 
-    padding: 15px; 
-    background: #333; 
-    position: sticky; 
-    bottom: 0; 
-}
-
-.btn { 
-    padding: 10px 20px; 
-    border: none; 
-    color: white; 
-    font-weight: bold; 
-    cursor: pointer; 
-    margin: 0 5px; 
-}
-.valider { background: #007bff; }
-.pdf { background: #6c757d; }
+/* --- BOUTONS --- */
+.btn-area { text-align: center; padding: 15px; background: #eee; position: sticky; bottom: 0; border-top: 2px solid #999; }
+.btn { padding: 10px 20px; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; margin: 0 5px; }
+.valider { background: #0056b3; }
+.pdf { background: #555; }
 .envoyer { background: #28a745; }
 
-/* --- PRINT / PDF OPTIMIZATION --- */
+/* --- CONFIGURATION FINALE IMPRESSION / PDF --- */
+/* --- CONFIGURATION FINALE IMPRESSION / PDF --- */
+@page {
+    size: A4;
+    margin: 0; /* On gère les marges dans le container pour éviter les coupures */
+}
+
 @media print {
-    body { background: white; padding: 0; margin: 0; }
-    .container { 
-        width: 100%; 
-        max-width: none; 
-        box-shadow: none; 
-        border: none;
-        padding: 5mm;
+    .no-print,
+    .btn-area {
+        display: none !important;
     }
-    .btn-area, #custom-alert { display: none !important; }
-    
-    /* Éviter les sauts de page au milieu d'un bloc */
-    .form-block, .result-container, .info-block, .question-card, .signature-table {
-        page-break-inside: avoid;
+
+    html, body {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 210mm !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .container {
+        width: 190mm !important;
+        max-width: 190mm !important;
+        margin: 0 auto !important;
+        padding: 4mm !important;
+        border: none !important;
+        box-sizing: border-box !important;
+        transform: none !important;
+    }
+
+    .main-header {
+        margin-bottom: 2mm !important;
+    }
+
+    .form-block,
+    .result-container,
+    .info-block {
+        margin-bottom: 1.5mm !important;
+    }
+
+.q-title {
+    margin: 1.5mm 0 0.5mm 0 !important;
+    padding-bottom: 1mm !important;
+    line-height: 1 !important;
+}
+
+.question-card {
+    margin-bottom: 0.5mm !important;
+    padding: 0 !important;
+}
+
+.question-card p {
+    margin: 0 0 0.5mm 0 !important;
+    padding-bottom: 0.5mm !important;
+    font-size: 9.5pt !important;
+}
+
+    .question-card label {
+        font-size: 9pt !important;
+        margin: 2px 0 !important;
+    }
+
+    .pictogram-img-right {
+        width: 50px !important;
+    }
+
+    .sig-zone {
+        height: 45px !important;
+    }
+
+    .legal-notice-box {
+        margin-top: 2mm !important;
+    }
+
+    .question-card,
+    .signature-table,
+    .legal-notice-box,
+    .form-block,
+    .result-container,
+    .info-block {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
 }

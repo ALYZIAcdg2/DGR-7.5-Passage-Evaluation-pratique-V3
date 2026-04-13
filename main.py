@@ -10,7 +10,7 @@ from pyppeteer import launch
 
 app = FastAPI()
 
-# --- MODÈLE DE DONNÉES DGR ---
+# --- MODÈLE DE DONNÉES COMPLET ---
 class EvalDGR(BaseModel):
     nom_agent: str
     prenom_agent: str
@@ -22,89 +22,86 @@ class EvalDGR(BaseModel):
     points: int
     pourcentage: float
     status: str
+    sig_eval: str
+    sig_stagiaire: str
 
-# --- GÉNÉRATION PDF DGR (Moteur Chrome) ---
+# --- LOGIQUE DE GÉNÉRATION PDF (Chrome Headless) ---
 async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
-    fichier = f"EVAL_DGR_{nom_clean}.pdf"
+    pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
     
+    # Lancement du navigateur (indispensable sur Render)
     browser = await launch(
         args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        handleSIGINT=False, 
-        handleSIGTERM=False, 
+        handleSIGINT=False,
+        handleSIGTERM=False,
         handleSIGHUP=False
     )
     
     page = await browser.newPage()
     
     try:
-        # Attente du chargement complet
+        # On charge l'application locale
+        # Render utilise localhost:10000 par défaut
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
-        
-        # Injection forcée : transforme les inputs en texte pour le PDF
-        await page.evaluate(f"""() => {{
-            const fixerChamp = (id, valeur) => {{
-                const el = document.getElementById(id);
-                if (el) {{
-                    const span = document.createElement('span');
-                    span.innerText = valeur.toUpperCase();
-                    span.style.fontWeight = 'bold';
-                    el.parentNode.replaceChild(span, el);
-                }}
-            }};
 
-            // Remplissage Agent et Evaluateur
-            fixerChamp('nom-agent', "{data.nom_agent}");
-            fixerChamp('prenom-agent', "{data.prenom_agent}");
-            fixerChamp('nom-eval', "{data.nom_eval}");
-            fixerChamp('prenom-eval', "{data.prenom_eval}");
-            fixerChamp('fonction-eval', "{data.fonction_eval}");
-            fixerChamp('lieu-eval', "{data.lieu_eval}");
+        # On injecte les données calculées dans le formulaire avant impression
+        await page.evaluate(f"""(d) => {{
+            document.getElementById('nom-agent').value = d.nom_agent;
+            document.getElementById('prenom-agent').value = d.prenom_agent;
+            document.getElementById('nom-eval').value = d.nom_eval;
+            document.getElementById('prenom-eval').value = d.prenom_eval;
+            document.getElementById('fonction-eval').value = d.fonction_eval;
+            document.getElementById('date-eval').value = d.date_eval;
+            document.getElementById('lieu-eval').value = d.lieu_eval;
             
-            // Fix pour la date (formatage simple)
-            const dateEl = document.getElementById('date-eval');
-            if (dateEl) {{
-                const spanDate = document.createElement('span');
-                spanDate.innerText = "{data.date_eval}";
-                dateEl.parentNode.replaceChild(spanDate, dateEl);
-            }}
+            // Mise à jour des résultats
+            document.getElementById('points-result').innerText = d.points + "/100";
+            document.getElementById('percent-result').innerText = d.pourcentage + "%";
+            document.getElementById('status-result').innerText = d.status;
+            
+            // Signatures
+            document.getElementById('sig-eval').innerText = d.sig_eval;
+            document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
+            
+            // On cache les boutons pour le PDF
+            const btnArea = document.querySelector('.btn-area');
+            if(btnArea) btnArea.style.display = 'none';
+        }}""", data.dict())
 
-            // Mise à jour des scores et validation
-            document.getElementById('points-result').innerText = "{data.points}";
-            document.getElementById('percent-result').innerText = "{data.pourcentage}";
-            document.getElementById('status-result').innerText = "{data.status}";
-        }}""")
-
-        # Génération du PDF avec marges optimisées
+        # Création du PDF
         await page.pdf({
-            'path': fichier,
+            'path': pdf_filename,
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}
+            'margin': {'top': '5mm', 'bottom': '5mm', 'left': '5mm', 'right': '5mm'}
         })
+        
     finally:
         await browser.close()
     
-    return fichier
+    return pdf_filename
 
-# --- ENVOI EMAIL (Identique à PAXI - Solution SendGrid) ---
-async def envoyer_email(fichier, nom):
+# --- FONCTION ENVOI EMAIL (SENDGRID) ---
+async def envoyer_email(fichier_path, nom_agent):
     API_KEY = os.getenv("SENDGRID_API_KEY")
-    SENDER_EMAIL = "alyzia.cdg2@gmail.com"
-    RECEIVER_EMAIL = "xavier.oliere@alyzia.com"
+    if not API_KEY:
+        raise Exception("Clé API SendGrid manquante dans les variables d'environnement")
 
-    with open(fichier, "rb") as f:
+    with open(fichier_path, "rb") as f:
         encoded_pdf = base64.b64encode(f.read()).decode()
 
     payload = {
-        "personalizations": [{"to": [{"email": RECEIVER_EMAIL}]}],
-        "from": {"email": SENDER_EMAIL, "name": "ALYZIA DGR SYSTEM"},
-        "subject": f"EVALUATION DGR 7.5 - {nom.upper()}",
-        "content": [{"type": "text/plain", "value": f"Bonjour,\n\nVeuillez trouver ci-joint l'évaluation DGR 7.5 de l'agent : {nom}."}],
+        "personalizations": [{
+            "to": [{"email": "votre-email@domaine.com"}] # Remplacez par l'email de réception
+        }],
+        "from": {"email": "votre-email-verifie-sendgrid@domaine.com"}, # Email expéditeur validé
+        "subject": f"Résultat Évaluation DGR - {nom_agent.upper()}",
+        "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation pratique de {nom_agent}."}],
         "attachments": [
             {
                 "content": encoded_pdf,
-                "filename": fichier,
+                "filename": os.path.basename(fichier_path),
                 "type": "application/pdf",
                 "disposition": "attachment"
             }
@@ -119,30 +116,29 @@ async def envoyer_email(fichier, nom):
     async with httpx.AsyncClient() as client:
         response = await client.post("https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers)
         if response.status_code >= 400:
-            print(f"Erreur API SendGrid: {response.text}")
-            raise Exception("Erreur lors de l'envoi du mail via API")
+            raise Exception(f"Erreur SendGrid: {response.text}")
 
-# --- ROUTE PRINCIPALE ---
+# --- ROUTES ---
 @app.post("/submit")
-async def submit(data: EvalDGR, action: str = Query("email")):
+async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
-        # 1. Génération du PDF
         pdf_path = await generer_pdf_dgr(data)
         
         if action == "email":
-            # 2. Envoi via SendGrid
             await envoyer_email(pdf_path, data.nom_agent)
-            return {"status": "ok"}
+            return {"status": "success", "message": "Email envoyé avec le PDF."}
         else:
-            # 3. Téléchargement direct
-            return FileResponse(
-                path=pdf_path,
-                filename=pdf_path,
-                media_type='application/pdf'
-            )
+            return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
+            
     except Exception as e:
-        print(f"ERREUR SERVEUR : {e}")
+        print(f"Erreur: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Montage des fichiers statiques (index.html, style.css, script.js)
+# Servir les fichiers statiques (HTML, CSS, JS, Images)
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
+
+if __name__ == "__main__":
+    import uvicorn
+    # Le port doit être 10000 pour Render
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
