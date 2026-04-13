@@ -43,17 +43,37 @@ async def generer_pdf_dgr(data: EvalDGR):
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
         
         # Injection des données dans le HTML
+# Injection robuste des données
         await page.evaluate(f"""() => {{
-            document.getElementById('nom-agent').value = "{data.nom_agent}";
-            document.getElementById('prenom-agent').value = "{data.prenom_agent}";
-            document.getElementById('nom-eval').value = "{data.nom_eval}";
-            document.getElementById('prenom-eval').value = "{data.prenom_eval}";
-            document.getElementById('fonction-eval').value = "{data.fonction_eval}";
-            document.getElementById('date-eval').value = "{data.date_eval}";
-            document.getElementById('lieu-eval').value = "{data.lieu_eval}";
-            document.getElementById('points-result').innerText = "{data.points}";
-            document.getElementById('percent-result').innerText = "{data.pourcentage}";
-            document.getElementById('status-result').innerText = "{data.status}";
+            const remplir = (id, valeur) => {{
+                const el = document.getElementById(id);
+                if (el) {{
+                    // On remplace l'input par du texte pour le PDF
+                    const span = document.createElement('span');
+                    span.innerText = valeur;
+                    span.style.fontWeight = 'bold';
+                    span.style.textTransform = 'uppercase';
+                    el.parentNode.replaceChild(span, el);
+                }}
+            }};
+
+            remplir('nom-agent', "{data.nom_agent}");
+            remplir('prenom-agent', "{data.prenom_agent}");
+            remplir('nom-eval', "{data.nom_eval}");
+            remplir('prenom-eval', "{data.prenom_eval}");
+            remplir('fonction-eval', "{data.fonction_eval}");
+            remplir('date-eval', "{data.date_eval}");
+            remplir('lieu-eval', "{data.lieu_eval}");
+            
+            // Pour les résultats en bas
+            const pRes = document.getElementById('points-result');
+            if (pRes) pRes.innerText = "{data.points}";
+            
+            const pcRes = document.getElementById('percent-result');
+            if (pcRes) pcRes.innerText = "{data.pourcentage}%";
+            
+            const sRes = document.getElementById('status-result');
+            if (sRes) sRes.innerText = "{data.status}";
         }}""")
 
         # Création du PDF
