@@ -28,7 +28,6 @@ async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
     fichier = f"EVAL_DGR_{nom_clean}.pdf"
     
-    # Lancement de Chrome avec les arguments de sécurité pour Render
     browser = await launch(
         args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
         handleSIGINT=False, 
@@ -39,49 +38,49 @@ async def generer_pdf_dgr(data: EvalDGR):
     page = await browser.newPage()
     
     try:
-        # On attend que le formulaire local soit chargé
+        # Attente du chargement complet
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
         
-        # Injection des données dans le HTML
-# Injection robuste des données
+        # Injection forcée : transforme les inputs en texte pour le PDF
         await page.evaluate(f"""() => {{
-            const remplir = (id, valeur) => {{
+            const fixerChamp = (id, valeur) => {{
                 const el = document.getElementById(id);
                 if (el) {{
-                    // On remplace l'input par du texte pour le PDF
                     const span = document.createElement('span');
-                    span.innerText = valeur;
+                    span.innerText = valeur.toUpperCase();
                     span.style.fontWeight = 'bold';
-                    span.style.textTransform = 'uppercase';
                     el.parentNode.replaceChild(span, el);
                 }}
             }};
 
-            remplir('nom-agent', "{data.nom_agent}");
-            remplir('prenom-agent', "{data.prenom_agent}");
-            remplir('nom-eval', "{data.nom_eval}");
-            remplir('prenom-eval', "{data.prenom_eval}");
-            remplir('fonction-eval', "{data.fonction_eval}");
-            remplir('date-eval', "{data.date_eval}");
-            remplir('lieu-eval', "{data.lieu_eval}");
+            // Remplissage Agent et Evaluateur
+            fixerChamp('nom-agent', "{data.nom_agent}");
+            fixerChamp('prenom-agent', "{data.prenom_agent}");
+            fixerChamp('nom-eval', "{data.nom_eval}");
+            fixerChamp('prenom-eval', "{data.prenom_eval}");
+            fixerChamp('fonction-eval', "{data.fonction_eval}");
+            fixerChamp('lieu-eval', "{data.lieu_eval}");
             
-            // Pour les résultats en bas
-            const pRes = document.getElementById('points-result');
-            if (pRes) pRes.innerText = "{data.points}";
-            
-            const pcRes = document.getElementById('percent-result');
-            if (pcRes) pcRes.innerText = "{data.pourcentage}%";
-            
-            const sRes = document.getElementById('status-result');
-            if (sRes) sRes.innerText = "{data.status}";
+            // Fix pour la date (formatage simple)
+            const dateEl = document.getElementById('date-eval');
+            if (dateEl) {{
+                const spanDate = document.createElement('span');
+                spanDate.innerText = "{data.date_eval}";
+                dateEl.parentNode.replaceChild(spanDate, dateEl);
+            }}
+
+            // Mise à jour des scores et validation
+            document.getElementById('points-result').innerText = "{data.points}";
+            document.getElementById('percent-result').innerText = "{data.pourcentage}";
+            document.getElementById('status-result').innerText = "{data.status}";
         }}""")
 
-        # Création du PDF
+        # Génération du PDF avec marges optimisées
         await page.pdf({
             'path': fichier,
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '10mm', 'bottom': '10mm', 'left': '10mm', 'right': '10mm'}
+            'margin': {'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'}
         })
     finally:
         await browser.close()
