@@ -1,0 +1,300 @@
+:root { 
+    --orange: #EF7D00; 
+    --black: #000000;
+    --gray-bg: #f2f2f2;
+}
+
+/* --- RESET & BASE --- */
+* {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+body { 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    background: #525659; 
+    padding: 20px; 
+    margin: 0;
+}
+
+.container { 
+    max-width: 800px; 
+    margin: auto; 
+    background: white; 
+    padding: 10mm; 
+    border: 1px solid var(--black);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* --- EN-TÊTE --- */
+.main-header {
+    display: flex;
+    border: 1.5px solid var(--black);
+    margin-bottom: 4mm;
+}
+
+.logo-box {
+    width: 30%;
+    border-right: 1.5px solid var(--black);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-box img {
+    max-width: 100%;
+    max-height: 45px;
+}
+
+.title-box {
+    width: 70%;
+    text-align: center;
+}
+
+.title-box h1 {
+    margin: 0;
+    font-size: 14pt;
+    color: var(--orange);
+    border-bottom: 1.5px solid var(--black);
+    padding: 3px 0;
+    text-transform: uppercase;
+}
+
+.title-box h2 {
+    margin: 0;
+    font-size: 11pt;
+    padding: 5px 0;
+}
+
+/* --- BLOCS D'INFORMATIONS --- */
+.form-block { 
+    margin-bottom: 3mm; 
+    border: 1.5px solid var(--black); 
+}
+
+.block-header { 
+    background: var(--orange); 
+    color: white; 
+    text-align: center; 
+    padding: 3px; 
+    font-weight: bold; 
+    font-size: 10pt; 
+    text-transform: uppercase;
+}
+
+.block-content { display: grid; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+.input-group { border-right: 1px solid var(--black); }
+.input-group:last-child { border-right: none; }
+
+.input-group label { 
+    display: block; 
+    background: var(--gray-bg); 
+    text-align: center; 
+    font-size: 8pt; 
+    font-weight: bold; 
+    padding: 2px; 
+    border-bottom: 1px solid var(--black); 
+}
+
+.input-group input { 
+    width: 100%; 
+    border: none; 
+    padding: 5px; 
+    text-align: center; 
+    font-size: 10pt; 
+    font-weight: bold; 
+    text-transform: uppercase;
+}
+
+/* --- RÉSULTATS & VALIDATION --- */
+.result-container, .info-block { 
+    display: flex; 
+    border: 1.5px solid var(--black); 
+    margin-bottom: 3mm; 
+}
+
+.result-sidebar, .info-sidebar { 
+    background: var(--orange); 
+    color: white; 
+    width: 25%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+    padding: 5px; 
+    font-weight: bold; 
+    font-size: 9pt; 
+    border-right: 1.5px solid var(--black); 
+}
+
+.result-data, .info-content { width: 75%; }
+
+.res-row { display: flex; border-bottom: 1px solid var(--black); }
+.res-row:last-child { border-bottom: none; }
+
+.res-row span {
+    width: 50%;
+    padding: 4px;
+    border-right: 1px solid var(--black);
+    font-size: 9pt;
+    font-weight: bold;
+    background: var(--gray-bg);
+}
+
+.res-row input { 
+    width: 50%; 
+    border: none; 
+    padding: 2px; 
+    font-size: 10pt; 
+    font-weight: bold; 
+    text-align: center;
+}
+
+.score-display { 
+    width: 50%; 
+    text-align: center; 
+    padding: 4px; 
+    font-size: 10pt; 
+    font-weight: bold;
+}
+
+/* --- QUESTIONNAIRE --- */
+.q-title {
+    background: var(--orange);
+    color: white;
+    padding: 3px 10px;
+    font-size: 11pt;
+    margin: 4mm 0 2mm 0;
+}
+
+.question-card {
+    margin-bottom: 3mm;
+}
+
+.question-card p {
+    margin: 0 0 2mm 0;
+    font-weight: bold;
+    font-size: 9.5pt;
+    border-bottom: 1px solid var(--orange);
+    padding-bottom: 2px;
+}
+
+.question-flex-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.options-box { width: 80%; }
+.image-box { width: 15%; text-align: right; }
+
+.pictogram-img-right { 
+    width: 55px; 
+    height: auto; 
+    border: 1px solid var(--black); 
+}
+
+.question-card label { 
+    display: block; 
+    margin: 3px 0; 
+    font-size: 9pt; 
+}
+
+/* --- SIGNATURES --- */
+.signature-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5mm;
+    border: 1.5px solid var(--black);
+}
+
+.main-title-sig, .sub-title-sig {
+    background-color: var(--orange);
+    color: white;
+    padding: 4px;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid var(--black);
+}
+
+.sig-zone {
+    border: 1px solid var(--black);
+    height: 50px;
+    width: 50%;
+}
+
+.sig-content {
+    width: 100%;
+    height: 100%;
+    padding: 5px;
+    font-size: 9pt;
+    font-style: italic;
+}
+
+/* --- BAS DE PAGE --- */
+.legal-notice-box {
+    display: flex;
+    border: 1.5px solid var(--black);
+    margin-top: 4mm;
+}
+
+.legal-text {
+    width: 80%;
+    padding: 4px;
+    font-size: 6.5pt;
+    line-height: 1.2;
+    border-right: 1px solid var(--black);
+}
+
+.legal-info {
+    width: 20%;
+    padding: 4px;
+    font-size: 7pt;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* --- BOUTONS (Masqués à l'impression) --- */
+.btn-area { 
+    text-align: center; 
+    padding: 15px; 
+    background: #333; 
+    position: sticky; 
+    bottom: 0; 
+}
+
+.btn { 
+    padding: 10px 20px; 
+    border: none; 
+    color: white; 
+    font-weight: bold; 
+    cursor: pointer; 
+    margin: 0 5px; 
+}
+.valider { background: #007bff; }
+.pdf { background: #6c757d; }
+.envoyer { background: #28a745; }
+
+/* --- PRINT / PDF OPTIMIZATION --- */
+@media print {
+    body { background: white; padding: 0; margin: 0; }
+    .container { 
+        width: 100%; 
+        max-width: none; 
+        box-shadow: none; 
+        border: none;
+        padding: 5mm;
+    }
+    .btn-area, #custom-alert { display: none !important; }
+    
+    /* Éviter les sauts de page au milieu d'un bloc */
+    .form-block, .result-container, .info-block, .question-card, .signature-table {
+        page-break-inside: avoid;
+    }
+}
