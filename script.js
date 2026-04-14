@@ -70,6 +70,14 @@ function calculerScore() {
     const status = document.getElementById('status-result');
     status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
     status.style.color = score >= 80 ? "green" : "red";
+
+    const nom = document.getElementById('nom-agent').value;
+const date = document.getElementById('date-eval').value;
+
+if (!nom || !date) {
+    showAlert("Veuillez remplir le nom de l'agent et la date avant de valider.");
+    return;
+}
 }
 
 function genererPDF() {

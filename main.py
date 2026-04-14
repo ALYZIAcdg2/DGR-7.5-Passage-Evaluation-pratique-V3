@@ -60,12 +60,11 @@ async def generer_pdf_dgr(data: EvalDGR):
 
         # Injection complète des données ET déclenchement du calcul de score
         await page.evaluate(f"""(d) => {{
+            // 1. Remplissage des champs texte
             const setVal = (id, val) => {{
                 const el = document.getElementById(id);
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
-
-            // Remplissage des champs texte
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -73,12 +72,8 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('fonction-eval', d.fonction_eval);
             setVal('date-eval', d.date_eval);
             setVal('lieu-eval', d.lieu_eval);
-            
-            // Signatures
-            if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
-            if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // Cochage des réponses (Crucial pour le calcul du score)
+            // 2. Cochage des réponses (Crucial pour le calcul)
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
@@ -87,13 +82,14 @@ async def generer_pdf_dgr(data: EvalDGR):
                 }}
             }}
 
-            // FORCE le calcul du score pour générer les couleurs et les points dans le PDF
+            // 3. FORCE LE CALCUL VISUEL (Couleurs et points)
+            // On appelle calculerScore() pour que le serveur génère les fonds rouges/verts
             if (typeof calculerScore === "function") {{
                 calculerScore();
             }}
 
-            // Nettoyage : On masque les éléments inutiles pour le PDF
-            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.style.display = 'none');
+            // 4. Nettoyage final pour le PDF
+            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.remove());
         }}""", data.dict())
 
         # On attend que le moteur de rendu applique les couleurs et les calculs
