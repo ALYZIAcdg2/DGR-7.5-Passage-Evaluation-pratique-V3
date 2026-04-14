@@ -115,4 +115,50 @@ function genererPDF() {
     html2pdf().set(opt).from(element).save();
 }
 
-// Conserver ta fonction envoyerEmail() actuelle qui fonctionne bien
+async function envoyerEmail() {
+    const btn = document.querySelector('.envoyer');
+    btn.disabled = true;
+    btn.textContent = "Envoi...";
+
+    const data = {
+        nom_agent: document.getElementById('nom-agent').value,
+        prenom_agent: document.getElementById('prenom-agent').value,
+        nom_eval: document.getElementById('nom-eval').value,
+        prenom_eval: document.getElementById('prenom-eval').value,
+        fonction_eval: document.getElementById('fonction-eval').value,
+        date_eval: document.getElementById('date-eval').value,
+        lieu_eval: document.getElementById('lieu-eval').value,
+        points: parseInt(document.getElementById('points-result').textContent) || 0,
+        pourcentage: parseFloat(document.getElementById('percent-result').textContent) || 0,
+        status: document.getElementById('status-result').innerText,
+        sig_eval: document.getElementById('sig-eval').innerText,
+        sig_stagiaire: document.getElementById('sig-stagiaire').innerText,
+        reponses: {
+            q1: document.querySelector('input[name="q1"]:checked')?.value || "",
+            q2: document.querySelector('input[name="q2"]:checked')?.value || "",
+            q3: document.querySelector('input[name="q3"]:checked')?.value || "",
+            q4: document.querySelector('input[name="q4"]:checked')?.value || "",
+            q5: document.querySelector('input[name="q5"]:checked')?.value || ""
+        }
+    };
+
+    try {
+        const response = await fetch('/submit?action=email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showAlert("Félicitations ! Email envoyé avec succès.");
+        } else {
+            const err = await response.json();
+            showAlert("Erreur : " + err.detail);
+        }
+    } catch (e) {
+        showAlert("Erreur de connexion au serveur.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "ENVOYER EMAIL";
+    }
+}
