@@ -72,9 +72,10 @@ async def generer_pdf_dgr(data: EvalDGR):
     pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
     
     import json
-    # On prépare les données en JSON propre pour le JavaScript
+    # Préparation des données pour injection sécurisée
     data_json = json.dumps(data.dict())
 
+    # Détection du chemin Chrome
     chrome_path = os.environ.get("CHROME_PATH")
     if not chrome_path and os.path.exists('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'):
         chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
@@ -88,9 +89,10 @@ async def generer_pdf_dgr(data: EvalDGR):
     await page.setViewport({'width': 1024, 'height': 1600})
     
     try:
+        # Chargement de la page locale
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
-        # Injection des données et simulation du remplissage
+        # Injection et simulation du comportement de l'agent
         await page.evaluate(f"""(dStr) => {{
             const d = JSON.parse(dStr);
             const setVal = (id, val) => {{
@@ -98,6 +100,7 @@ async def generer_pdf_dgr(data: EvalDGR):
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
 
+            // 1. Remplissage des champs texte
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -106,27 +109,33 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('date-eval', d.date_eval);
             setVal('lieu-eval', d.lieu_eval);
             
+            // 2. Signatures
             if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
             if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // Cocher les radios et déclencher les styles
+            // 3. COCHAGE DES RÉPONSES (Indispensable pour que le score ne soit pas à 0)
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
                     input.checked = true;
+                    // Force l'attribut visuel pour le rendu PDF
                     input.setAttribute('checked', 'checked');
-                    input.click(); // Déclenche calculerScore() via l'event listener
                 }}
             }}
 
-            // Force le calcul final
-            if (typeof calculerScore === "function") {{ calculerScore(); }}
+            // 4. FORCE LE CALCUL DU SCORE (Pour colorier en rouge/vert et mettre à jour le score final)
+            if (typeof calculerScore === "function") {{ 
+                calculerScore(); 
+            }}
 
+            // 5. Nettoyage visuel du PDF
             document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
         }}""", data_json)
 
-        await asyncio.sleep(4) # Temps pour que les couleurs s'appliquent sur le serveur
+        # Pause pour laisser le moteur CSS appliquer les couleurs de script.js
+        await asyncio.sleep(4) 
 
+        # Génération du PDF final
         await page.pdf({
             'path': pdf_filename,
             'format': 'A4',

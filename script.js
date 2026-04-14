@@ -17,17 +17,19 @@ function calculerScore() {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // Q1 - Checkboxes
+    // --- Logique Q1 (Checkboxes) ---
     const q1Corrects = ["SITADOC", "IATA"];
     const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
+    const q1Inputs = document.querySelectorAll('input[name="q1"]');
     let q1Error = false;
     
-    document.querySelectorAll('input[name="q1"]').forEach(input => {
-        if (q1Corrects.includes(input.value)) {
-            input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
-        }
+    // RESET et Vert pour les bonnes réponses par défaut
+    q1Inputs.forEach(input => {
+        const isCorrect = q1Corrects.includes(input.value);
+        input.parentElement.style.setProperty('background-color', isCorrect ? '#d4edda' : 'transparent', 'important');
     });
 
+    // ROUGE pour les erreurs de l'agent
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
             choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
@@ -40,44 +42,62 @@ function calculerScore() {
     const resQ1 = document.getElementById('res-q1');
     if(resQ1) {
         resQ1.textContent = `+${q1Points} pts`;
-        resQ1.style.color = q1Points > 0 ? "green" : "red";
+        resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
     }
 
-    // Q2 à Q5 - Radios
+    // --- Logique Q2 à Q5 (Radios) ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
+        const allRadios = document.querySelectorAll(`input[name="${qName}"]`);
         
-        document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            if (input.parentElement.textContent.includes(solutions[qName])) {
-                input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
-            }
+        // RESET et Vert pour la solution sur chaque ligne
+        allRadios.forEach(input => {
+            const isSolution = input.parentElement.textContent.includes(solutions[qName]);
+            input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
+            
+            // Force l'affichage du bouton radio (cercle) pour le moteur PDF
+            input.style.setProperty('appearance', 'auto', 'important');
         });
 
         if (userChoice) {
-            // Style pour forcer la visibilité de la coche sur le PDF
-            userChoice.style.setProperty('appearance', 'auto', 'important');
+            // Style pour forcer la visibilité du point bleu sur le PDF
             userChoice.style.setProperty('accent-color', 'blue', 'important');
 
             if (userChoice.parentElement.textContent.includes(solutions[qName])) {
                 score += 20;
-                if(resSpan) resSpan.textContent = "+20 pts";
+                if(resSpan) {
+                    resSpan.textContent = "+20 pts";
+                    resSpan.style.setProperty('color', 'green', 'important');
+                }
             } else {
+                // APPLIQUE LE ROUGE sur le mauvais choix de l'agent
                 userChoice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
-                if(resSpan) resSpan.textContent = "+0 pt";
+                if(resSpan) {
+                    resSpan.textContent = "+0 pt";
+                    resSpan.style.setProperty('color', 'red', 'important');
+                }
             }
+        } else if (resSpan) {
+            // Si aucune réponse n'est cochée
+            resSpan.textContent = "+0 pt";
+            resSpan.style.setProperty('color', 'red', 'important');
         }
     }
 
-    // Affichage des scores (innerText pour forcer le contenu)
-    document.getElementById('points-result').innerText = score + " / 100";
-    document.getElementById('percent-result').innerText = score + " %";
+    // --- Mise à jour finale (Utilisation de innerText pour le serveur) ---
+    const pointsElem = document.getElementById('points-result');
+    const percentElem = document.getElementById('percent-result');
+    
+    if(pointsElem) pointsElem.innerText = score + " / 100";
+    if(percentElem) percentElem.innerText = score + " %";
     
     const status = document.getElementById('status-result');
     if(status) {
         status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
-        status.style.color = score >= 80 ? "green" : "red";
+        status.style.setProperty('color', score >= 80 ? 'green' : 'red', 'important');
+        status.style.setProperty('font-weight', 'bold', 'important');
     }
 }
 
