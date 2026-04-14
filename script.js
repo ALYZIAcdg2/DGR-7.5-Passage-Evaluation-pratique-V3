@@ -23,24 +23,30 @@ function calculerScore() {
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
     
     q1Inputs.forEach(input => {
-        // Reset et met en vert les bonnes solutions par défaut
-        input.parentElement.style.backgroundColor = q1Corrects.includes(input.value) ? "#d4edda" : "transparent";
+        // Reset et met en vert les bonnes solutions par défaut avec !important pour le PDF
+        if (q1Corrects.includes(input.value)) {
+            input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
+        } else {
+            input.parentElement.style.setProperty('background-color', 'transparent', 'important');
+        }
     });
 
     let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
-            choice.parentElement.style.backgroundColor = "#f8d7da"; // Rouge pour l'erreur
+            // Rouge forcé pour l'erreur
+            choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
             q1Error = true;
         }
     });
 
+    // Calcul des points Q1 : 20 pts si au moins une bonne réponse et aucune erreur
     const q1Points = (q1Choices.length > 0 && !q1Error) ? 20 : 0;
     score += q1Points;
     const resQ1 = document.getElementById('res-q1');
     if(resQ1) {
         resQ1.textContent = `+${q1Points} pts`;
-        resQ1.style.color = q1Points > 0 ? "green" : "red";
+        resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
     }
 
     // --- Logique Q2 à Q5 (Boutons Radio) ---
@@ -50,34 +56,44 @@ function calculerScore() {
         const resSpan = document.getElementById(`res-${qName}`);
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            // Met systématiquement la bonne réponse en vert
+            // Met systématiquement la bonne réponse en vert avec !important
             if (input.parentElement.textContent.includes(solutions[qName])) {
-                input.parentElement.style.backgroundColor = "#d4edda";
+                input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
             } else {
-                input.parentElement.style.backgroundColor = "transparent";
+                input.parentElement.style.setProperty('background-color', 'transparent', 'important');
             }
         });
 
         if (userChoice) {
-            if (userChoice.parentElement.textContent.includes(solutions[qName])) {
+            const parent = userChoice.parentElement;
+            if (parent.textContent.includes(solutions[qName])) {
                 score += 20;
-                if(resSpan) { resSpan.textContent = "+20 pts"; resSpan.style.color = "green"; }
+                if(resSpan) {
+                    resSpan.textContent = "+20 pts";
+                    resSpan.style.setProperty('color', 'green', 'important');
+                }
             } else {
-                // APPLIQUE LE ROUGE SUR LE MAUVAIS CHOIX 
-                userChoice.parentElement.style.backgroundColor = "#f8d7da";
-                if(resSpan) { resSpan.textContent = "+0 pt"; resSpan.style.color = "red"; }
+                // APPLIQUE LE ROUGE FORCÉ SUR LE MAUVAIS CHOIX
+                parent.style.setProperty('background-color', '#f8d7da', 'important');
+                if(resSpan) {
+                    resSpan.textContent = "+0 pt";
+                    resSpan.style.setProperty('color', 'red', 'important');
+                }
             }
         }
     }
 
     // Mise à jour des scores dans le HTML
-    document.getElementById('points-result').textContent = score; 
-    document.getElementById('percent-result').textContent = score; 
+    const pointsElem = document.getElementById('points-result');
+    const percentElem = document.getElementById('percent-result');
+    
+    if(pointsElem) pointsElem.textContent = score; 
+    if(percentElem) percentElem.textContent = score; 
     
     const status = document.getElementById('status-result');
     if(status) {
         status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
-        status.style.color = score >= 80 ? "green" : "red";
+        status.style.setProperty('color', score >= 80 ? 'green' : 'red', 'important');
     }
 }
 
