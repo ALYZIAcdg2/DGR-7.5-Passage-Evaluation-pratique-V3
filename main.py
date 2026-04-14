@@ -31,6 +31,7 @@ class EvalDGR(BaseModel):
 
 
 async def envoyer_email(fichier_path, nom_agent):
+
     API_KEY = os.environ.get("SENDGRID_API_KEY")
     if not API_KEY:
         raise Exception("Clé API SendGrid manquante.")
@@ -38,11 +39,30 @@ async def envoyer_email(fichier_path, nom_agent):
     with open(fichier_path, "rb") as f:
         encoded_pdf = base64.b64encode(f.read()).decode()
 
+    # 🔥 DESTINATAIRES MULTIPLES
+    destinataires = [
+        {"email": "xavier.oliere@alyzia.com"},   # chef
+        {"email": "rh@alyzia.com"}               # RH (à adapter)
+    ]
+
     payload = {
-        "personalizations": [{"to": [{"email": "xavier.oliere@alyzia.com"}]}],
-        "from": {"email": "alyzia.cdg2@gmail.com"},
-        "subject": f"EVALUATION_PRATIQUE_DGR 7.5 - {nom_agent.upper()}",
-        "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation de l'agent {nom_agent}."}],
+        "personalizations": [{
+            "to": destinataires
+        }],
+
+        # 🔥 NOM EXPÉDITEUR PERSONNALISÉ
+        "from": {
+            "email": "alyzia.cdg2@gmail.com",
+            "name": "CBTA DGR 7.5"
+        },
+
+        "subject": f"EVALUATION PRATIQUE DGR 7.5 - {nom_agent.upper()}",
+
+        "content": [{
+            "type": "text/plain",
+            "value": f"Veuillez trouver ci-joint l'évaluation de l'agent {nom_agent}."
+        }],
+
         "attachments": [{
             "content": encoded_pdf,
             "filename": os.path.basename(fichier_path),
@@ -60,6 +80,7 @@ async def envoyer_email(fichier_path, nom_agent):
                 "Content-Type": "application/json"
             }
         )
+
         if r.status_code >= 400:
             raise Exception(f"Erreur SendGrid: {r.text}")
 
