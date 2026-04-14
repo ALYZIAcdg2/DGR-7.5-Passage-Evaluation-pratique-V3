@@ -8,7 +8,43 @@ function showAlert(message) {
     } else { alert(message); }
 }
 
-function calculerScore() {
+// Variable pour suivre si le score a été validé
+let scoreValide = false;
+
+function calculerScore(isManualClick = false) {
+    // Si c'est un changement automatique (clic radio) et qu'on n'a pas encore validé, on ne montre rien
+    if (!isManualClick && !scoreValide) return;
+
+    // Validation des champs obligatoires lors du clic sur le bouton
+    if (isManualClick) {
+        const champsObligatoires = [
+            { id: 'nom-agent', label: 'Nom de l\'agent' },
+            { id: 'nom-eval', label: 'Nom de l\'évaluateur' },
+            { id: 'date-eval', label: 'Date de l\'évaluation' },
+            { id: 'lieu-eval', label: 'Lieu de l\'évaluation' },
+            { id: 'sig-eval', label: 'Signature évaluateur', isText: true },
+            { id: 'sig-stagiaire', label: 'Signature stagiaire', isText: true }
+        ];
+
+        for (let champ of champsObligatoires) {
+            const el = document.getElementById(champ.id);
+            const val = champ.isText ? el.innerText.trim() : el.value.trim();
+            if (!val) {
+                showAlert(`Le champ "${champ.label}" est obligatoire.`);
+                return;
+            }
+        }
+
+        // Vérification que toutes les questions ont une réponse
+        for (let i = 1; i <= 5; i++) {
+            if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+                showAlert(`Veuillez répondre à la question ${i}.`);
+                return;
+            }
+        }
+        scoreValide = true;
+    }
+
     let score = 0;
     const solutions = {
         q2: "Toxique",
@@ -17,17 +53,20 @@ function calculerScore() {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // --- Logique Q1 (Checkboxes multi-choix d'origine) ---
+    // --- Logique Q1 ---
     const q1Corrects = ["SITADOC", "IATA"];
     const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
-    let q1Error = false;
     
     q1Inputs.forEach(input => {
-        const isCorrect = q1Corrects.includes(input.value);
-        input.parentElement.style.setProperty('background-color', isCorrect ? '#d4edda' : 'transparent', 'important');
+        if (q1Corrects.includes(input.value)) {
+            input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
+        } else {
+            input.parentElement.style.setProperty('background-color', 'transparent', 'important');
+        }
     });
 
+    let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
             choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
@@ -43,72 +82,55 @@ function calculerScore() {
         resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
     }
 
-    // --- Logique Q2 à Q5 (Nouvelles Checkboxes à choix unique) ---
+    // --- Logique Q2 à Q5 ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
-        // On cherche la checkbox cochée pour cette question
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
-        const allCheckboxes = document.querySelectorAll(`input[name="${qName}"]`);
         
-        // RESET et Vert pour la bonne réponse (solution)
-        allCheckboxes.forEach(input => {
-            const isSolution = input.value === solutions[qName];
-            input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
-            
-            // Forçage de l'apparence checkbox pour le moteur PDF de Render
-            input.style.setProperty('appearance', 'checkbox', 'important');
-            input.style.setProperty('-webkit-appearance', 'checkbox', 'important');
+        document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
+            if (input.parentElement.textContent.trim().includes(solutions[qName])) {
+                input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
+            } else {
+                input.parentElement.style.setProperty('background-color', 'transparent', 'important');
+            }
         });
 
         if (userChoice) {
-            // Style visuel pour la coche dans le PDF
-            userChoice.style.setProperty('accent-color', 'blue', 'important');
-
-            if (userChoice.value === solutions[qName]) {
+            userChoice.style.setProperty('outline', '2px solid blue', 'important');
+            userChoice.style.setProperty('appearance', 'auto', 'important');
+            
+            if (userChoice.parentElement.textContent.trim().includes(solutions[qName])) {
                 score += 20;
                 if(resSpan) {
                     resSpan.textContent = "+20 pts";
                     resSpan.style.setProperty('color', 'green', 'important');
                 }
             } else {
-                // ROUGE sur le mauvais choix de l'agent
                 userChoice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
                 if(resSpan) {
                     resSpan.textContent = "+0 pt";
                     resSpan.style.setProperty('color', 'red', 'important');
                 }
             }
-        } else if (resSpan) {
-            resSpan.textContent = "+0 pt";
-            resSpan.style.setProperty('color', 'red', 'important');
         }
     }
 
-    // --- Mise à jour finale du score ---
-    const pointsElem = document.getElementById('points-result');
-    const percentElem = document.getElementById('percent-result');
-    
-    if(pointsElem) pointsElem.innerText = score + " / 100";
-    if(percentElem) percentElem.innerText = score + " %";
+    // Nettoyage des doublons d'affichage pour le PDF
+    document.getElementById('points-result').innerText = score; 
+    document.getElementById('percent-result').innerText = score; 
     
     const status = document.getElementById('status-result');
     if(status) {
-        status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
-        status.style.setProperty('color', score >= 80 ? 'green' : 'red', 'important');
+        status.innerHTML = score >= 80 ? '<span style="color:green">☑ RÉUSSI</span>' : '<span style="color:red">☑ ÉCHEC</span>';
         status.style.setProperty('font-weight', 'bold', 'important');
     }
 }
 
-// AJOUT : Script de limitation de sélection (Choix unique Q2-Q5)
-document.querySelectorAll('.q-checkbox').forEach(cb => {
-    cb.addEventListener('change', function() {
-        if (this.checked) {
-            document.querySelectorAll(`input[name="${this.name}"]`).forEach(other => {
-                if (other !== this) other.checked = false;
-            });
-        }
-        calculerScore();
+// Modifier les écouteurs d'événements pour ne pas calculer immédiatement
+document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', () => {
+        if (scoreValide) calculerScore(false);
     });
 });
 

@@ -64,14 +64,14 @@
                     <span>Evaluation faite à :</span>
                     <input type="text" id="lieu-eval" required>
                 </div>
-                <div class="res-row">
-                    <span>Points obtenus :</span>
-                    <div class="score-display"><strong id="points-result">__</strong> / 100</div>
-                </div>
-                <div class="res-row">
-                    <span>% de réussite :</span>
-                    <div class="score-display"><strong id="percent-result">__</strong> %</div>
-                </div>
+<div class="res-row">
+    <span>Points obtenus :</span>
+    <div class="score-display"><strong id="points-result">0</strong> / 100</div>
+</div>
+<div class="res-row">
+    <span>% de réussite :</span>
+    <div class="score-display"><strong id="percent-result">0</strong> %</div>
+</div>
             </div>
         </div>
 
@@ -103,7 +103,7 @@
             </div>
 
 <div class="question-card">
-    <p>2. Ce pictogramme sur le bagage d'un passager indique un danger, lequel ? <span id="res-q2" class="point-detail"></span></p>
+    <p>2. Ce pictogramme... <span id="res-q2" class="point-detail" style="float:right; font-weight:bold;"></span></p>
     <div class="question-flex-container">
         <div class="options-box">
             <label><input type="checkbox" name="q2" value="Explosif" class="q-checkbox"> Explosif</label>
@@ -179,7 +179,7 @@
 </footer>
 
 <div class="btn-area no-print">
-<button type="button" onclick="calculerScore()" class="btn valider">VALIDER SCORE</button>
+<button type="button" onclick="calculerScore(true)" class="btn valider">VALIDER SCORE</button>
 <button type="button" onclick="genererPDF()" class="btn pdf">ENREGISTRER PDF</button>
     <button type="button" onclick="envoyerEmail()" class="btn envoyer">ENVOYER EMAIL</button>
 </div>
