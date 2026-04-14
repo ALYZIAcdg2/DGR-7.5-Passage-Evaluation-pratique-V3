@@ -7,6 +7,10 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pyppeteer import launch
+from dotenv import load_dotenv
+
+# Charge les variables d'environnement du fichier .env en local
+load_dotenv()
 
 app = FastAPI()
 
@@ -29,25 +33,49 @@ async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
     pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
     
+    # Détection automatique du chemin Chrome (Local Windows vs Render Linux)
     chrome_path = os.environ.get("CHROME_PATH")
-    browser = await launch(executablePath=chrome_path, args=['--no-sandbox'])
+    if not chrome_path and os.path.exists('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'):
+        chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+
+    launch_kwargs = {
+        "args": ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        "handleSIGINT": False,
+        "handleSIGTERM": False,
+        "handleSIGHUP": False
+    }
+    
+    if chrome_path:
+        launch_kwargs["executablePath"] = chrome_path
+
+    browser = await launch(**launch_kwargs)
     page = await browser.newPage()
     
     try:
-        await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0'})
+        # On charge la page (localhost suffit car le serveur tourne en même temps)
+        await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
         # Injection complète des données ET déclenchement du calcul de score dans le PDF
         await page.evaluate(f"""(d) => {{
-            // Remplissage texte
-            document.getElementById('nom-agent').value = d.nom_agent;
-            document.getElementById('prenom-agent').value = d.prenom_agent;
-            document.getElementById('nom-eval').value = d.nom_eval;
-            document.getElementById('prenom-eval').value = d.prenom_eval;
-            document.getElementById('fonction-eval').value = d.fonction_eval;
-            document.getElementById('date-eval').value = d.date_eval;
-            document.getElementById('lieu-eval').value = d.lieu_eval;
-            document.getElementById('sig-eval').innerText = d.sig_eval;
-            document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
+            // Remplissage des champs texte
+            const setVal = (id, val) => {{
+                const el = document.getElementById(id);
+                if(el) {{ el.value = val; el.setAttribute('value', val); }}
+            }};
+
+            setVal('nom-agent', d.nom_agent);
+            setVal('prenom-agent', d.prenom_agent);
+            setVal('nom-eval', d.nom_eval);
+            setVal('prenom-eval', d.prenom_eval);
+            setVal('fonction-eval', d.fonction_eval);
+            setVal('date-eval', d.date_eval);
+            setVal('lieu-eval', d.lieu_eval);
+            
+            // Signatures
+            const sigE = document.getElementById('sig-eval');
+            if(sigE) sigE.innerText = d.sig_eval;
+            const sigS = document.getElementById('sig-stagiaire');
+            if(sigS) sigS.innerText = d.sig_stagiaire;
 
             // Cochage des réponses
             for (const [name, value] of Object.entries(d.reponses)) {{
@@ -58,16 +86,17 @@ async def generer_pdf_dgr(data: EvalDGR):
                 }}
             }}
 
-            // FORCE le calcul du score pour générer les couleurs et les points dans le PDF
+            // FORCE le calcul du score pour générer les couleurs et les points visuels
             if (typeof calculerScore === "function") {{
                 calculerScore();
             }}
 
-            // Supprimer les boutons du PDF
-            document.querySelectorAll('.btn-area, .no-print').forEach(el => el.remove());
+            // Suppression des éléments qui ne doivent pas apparaître sur le PDF
+            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.remove());
         }}""", data.dict())
 
-        await asyncio.sleep(1) # Laisse le temps au script de colorier
+        # On attend un peu plus pour être sûr que les couleurs (CSS) sont appliquées
+        await asyncio.sleep(2) 
 
         await page.pdf({
             'path': pdf_filename,
@@ -75,8 +104,10 @@ async def generer_pdf_dgr(data: EvalDGR):
             'printBackground': True,
             'margin': {'top': '10mm', 'bottom': '10mm', 'left': '10mm', 'right': '10mm'}
         })
+        
     finally:
         await browser.close()
+    
     return pdf_filename
 
 async def envoyer_email(fichier_path, nom_agent):
@@ -101,9 +132,11 @@ async def envoyer_email(fichier_path, nom_agent):
     }
 
     async with httpx.AsyncClient() as client:
-        r = await client.post("https://api.sendgrid.com/v3/mail/send", 
-                             json=payload, 
-                             headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"})
+        r = await client.post(
+            "https://api.sendgrid.com/v3/mail/send", 
+            json=payload, 
+            headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+        )
         if r.status_code >= 400:
             raise Exception(f"Erreur SendGrid: {r.text}")
 
@@ -119,8 +152,10 @@ async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
         print(f"Erreur: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Montage des fichiers statiques
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
+    # On tourne sur le port 10000 requis par Render
     uvicorn.run(app, host="0.0.0.0", port=10000)

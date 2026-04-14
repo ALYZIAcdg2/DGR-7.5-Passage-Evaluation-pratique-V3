@@ -23,54 +23,63 @@ function calculerScore() {
     }
 
     let score = 0;
-    const solutions = {
+const solutions = {
         q2: "Toxique",
         q3: "Une cigarette électronique",
         q4: "Je préviens un responsable + périmètre de sécurité de 25m",
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // Nettoyage des anciens résultats sans vider les cases cochées
-    document.querySelectorAll('.question-card label').forEach(l => {
-        l.style.backgroundColor = "transparent";
-        l.style.color = "black";
+    // --- Logique Q1 ---
+    const q1Corrects = ["SITADOC", "IATA"];
+    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
+    const labelsQ1 = document.querySelectorAll('input[name="q1"]');
+    
+    // Reset et coloration Q1
+    labelsQ1.forEach(input => {
+        input.parentElement.style.backgroundColor = "transparent";
+        if (q1Corrects.includes(input.value)) {
+            input.parentElement.style.backgroundColor = "#d4edda"; // Vert pour les bonnes réponses
+        }
     });
 
-    // Logique Q1 (SITADOC + IATA sont les bonnes réponses)
-    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
-    const resQ1 = document.getElementById('res-q1');
-    let q1Correct = Array.from(q1Choices).some(c => c.value === "SITADOC" || c.value === "IATA");
+    let q1Points = 0;
+    q1Choices.forEach(choice => {
+        if (!q1Corrects.includes(choice.value)) {
+            choice.parentElement.style.backgroundColor = "#f8d7da"; // Rouge si "Salle de repli" est coché
+        }
+    });
+    // Validation spécifique Q1 (doit avoir les bons et pas le mauvais)
+    const isQ1Valid = Array.from(q1Choices).some(c => q1Corrects.includes(c.value)) && 
+                     !Array.from(q1Choices).some(c => c.value === "REPLI");
     
-    if (q1Correct) {
-        score += 20;
-        resQ1.textContent = "+20 pts";
-        resQ1.style.color = "green";
-    } else {
-        resQ1.textContent = "+0 pt";
-        resQ1.style.color = "red";
-    }
+    if (isQ1Valid) q1Points = 20;
+    document.getElementById('res-q1').textContent = `+${q1Points} pts`;
+    document.getElementById('res-q1').style.color = q1Points > 0 ? "green" : "red";
 
-    // Logique Q2 à Q5
+    // --- Logique Q2 à Q5 ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
         
-        // Coloration de la bonne réponse en vert (systématique)
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            if (input.parentElement.textContent.includes(solutions[qName])) {
+            input.parentElement.style.backgroundColor = "transparent";
+            // Toujours mettre la bonne réponse en vert
+            if (input.parentElement.textContent.trim().includes(solutions[qName])) {
                 input.parentElement.style.backgroundColor = "#d4edda";
             }
         });
 
-        if (userChoice && userChoice.parentElement.textContent.includes(solutions[qName])) {
-            score += 20;
-            resSpan.textContent = "+20 pts";
-            resSpan.style.color = "green";
-        } else if (userChoice) {
-            userChoice.parentElement.style.backgroundColor = "#f8d7da";
-            resSpan.textContent = "+0 pt";
-            resSpan.style.color = "red";
+        if (userChoice) {
+            if (userChoice.parentElement.textContent.trim().includes(solutions[qName])) {
+                resSpan.textContent = "+20 pts";
+                resSpan.style.color = "green";
+            } else {
+                userChoice.parentElement.style.backgroundColor = "#f8d7da"; // Rouge pour la mauvaise réponse
+                resSpan.textContent = "+0 pt";
+                resSpan.style.color = "red";
+            }
         }
     }
 
@@ -90,26 +99,22 @@ function calculerScore() {
 }
 
 function genererPDF() {
-    // On s'assure que le score est calculé avant de figer pour le PDF
+    // On force le calcul pour avoir les couleurs
     calculerScore();
 
     const element = document.getElementById('document-to-print');
     
-    // Synchronisation pour html2pdf
-    element.querySelectorAll('input').forEach(input => {
-        if (input.type === 'checkbox' || input.type === 'radio') {
-            if (input.checked) input.setAttribute('checked', 'checked');
-            else input.removeAttribute('checked');
-        } else {
-            input.setAttribute('value', input.value);
-        }
-    });
-
+    // Paramètres pour haute qualité et masquage des boutons
     const opt = {
-        margin: 5,
+        margin: [0, 0], // Marges à zéro car gérées par le CSS
         filename: `EVAL_DGR_${document.getElementById('nom-agent').value}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 3, // Augmente la netteté
+            useCORS: true,
+            logging: false,
+            ignoreElements: (el) => el.classList.contains('no-print') || el.classList.contains('btn-area')
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
