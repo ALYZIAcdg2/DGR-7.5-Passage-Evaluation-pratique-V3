@@ -29,28 +29,16 @@ async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
     pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
     
-    # Détection du chemin Chrome (Windows local vs Render Linux)
     chrome_path = os.environ.get("CHROME_PATH")
-    if not chrome_path and os.path.exists("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"):
-        chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-
-    launch_kwargs = {
-        "args": ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        "handleSIGINT": False, "handleSIGTERM": False, "handleSIGHUP": False
-    }
-    if chrome_path:
-        launch_kwargs["executablePath"] = chrome_path
-
-    browser = await launch(**launch_kwargs)
+    browser = await launch(executablePath=chrome_path, args=['--no-sandbox'])
     page = await browser.newPage()
     
     try:
-        # On utilise l'URL relative ou locale
-        url = "http://localhost:10000"
-        await page.goto(url, {'waitUntil': 'networkidle0', 'timeout': 60000})
+        await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0'})
 
-        # Injection des données dans le formulaire pour le PDF
+        # Injection complète des données ET déclenchement du calcul de score dans le PDF
         await page.evaluate(f"""(d) => {{
+            // Remplissage texte
             document.getElementById('nom-agent').value = d.nom_agent;
             document.getElementById('prenom-agent').value = d.prenom_agent;
             document.getElementById('nom-eval').value = d.nom_eval;
@@ -58,19 +46,28 @@ async def generer_pdf_dgr(data: EvalDGR):
             document.getElementById('fonction-eval').value = d.fonction_eval;
             document.getElementById('date-eval').value = d.date_eval;
             document.getElementById('lieu-eval').value = d.lieu_eval;
-            document.getElementById('points-result').innerText = d.points;
-            document.getElementById('percent-result').innerText = d.pourcentage;
-            document.getElementById('status-result').innerText = d.status;
             document.getElementById('sig-eval').innerText = d.sig_eval;
             document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
+            // Cochage des réponses
             for (const [name, value] of Object.entries(d.reponses)) {{
-                const el = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
-                if (el) el.checked = true;
+                const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
+                if (input) {{
+                    input.checked = true;
+                    input.setAttribute('checked', 'checked');
+                }}
             }}
-            // Cacher les boutons sur le PDF
-            document.querySelector('.btn-area').style.display = 'none';
+
+            // FORCE le calcul du score pour générer les couleurs et les points dans le PDF
+            if (typeof calculerScore === "function") {{
+                calculerScore();
+            }}
+
+            // Supprimer les boutons du PDF
+            document.querySelectorAll('.btn-area, .no-print').forEach(el => el.remove());
         }}""", data.dict())
+
+        await asyncio.sleep(1) # Laisse le temps au script de colorier
 
         await page.pdf({
             'path': pdf_filename,

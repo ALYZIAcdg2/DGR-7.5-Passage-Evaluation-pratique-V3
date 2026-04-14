@@ -76,7 +76,8 @@ function calculerScore() {
 
     // Affichage des résultats
     document.getElementById('points-result').textContent = score;
-    document.getElementById('percent-result').textContent = score + "%";
+    document.getElementById('percent-result').textContent = score; 
+// (Car le % est déjà écrit en dur dans le HTML à côté du strong)
     
     const status = document.getElementById('status-result');
     if (score >= 80) {

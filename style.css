@@ -18,6 +18,7 @@ body {
     padding: 15px; 
     border: 1px solid #000; 
     box-sizing: border-box;
+    margin-bottom: 100px !important; /* CHANGEMENT : Espace pour les boutons fixes */
 }
 
 /* --- EN-TÊTE --- */
@@ -201,17 +202,26 @@ body {
 }
 
 /* --- BOUTONS --- */
-.btn-area { text-align: center; padding: 15px; background: #eee; position: sticky; bottom: 0; border-top: 2px solid #999; }
+.btn-area { 
+    text-align: center; 
+    padding: 15px; 
+    background: rgba(238, 238, 238, 0.95); /* CHANGEMENT : Transparence */
+    position: fixed; /* CHANGEMENT : Fixé à l'écran */
+    bottom: 0; 
+    left: 0;
+    width: 100%;
+    border-top: 2px solid #999; 
+    z-index: 2000; /* CHANGEMENT : Reste au dessus du scroll */
+}
 .btn { padding: 10px 20px; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; margin: 0 5px; }
 .valider { background: #0056b3; }
 .pdf { background: #555; }
 .envoyer { background: #28a745; }
 
 /* --- CONFIGURATION FINALE IMPRESSION / PDF --- */
-/* --- CONFIGURATION FINALE IMPRESSION / PDF --- */
 @page {
     size: A4;
-    margin: 0; /* On gère les marges dans le container pour éviter les coupures */
+    margin: 0; 
 }
 
 @media print {
@@ -237,6 +247,7 @@ body {
         border: none !important;
         box-sizing: border-box !important;
         transform: none !important;
+        margin-bottom: 0 !important; /* CHANGEMENT : Pas de marge sur le PDF */
     }
 
     .main-header {
@@ -249,22 +260,22 @@ body {
         margin-bottom: 1.5mm !important;
     }
 
-.q-title {
-    margin: 1.5mm 0 0.5mm 0 !important;
-    padding-bottom: 1mm !important;
-    line-height: 1 !important;
-}
+    .q-title {
+        margin: 1.5mm 0 0.5mm 0 !important;
+        padding-bottom: 1mm !important;
+        line-height: 1 !important;
+    }
 
-.question-card {
-    margin-bottom: 0.5mm !important;
-    padding: 0 !important;
-}
+    .question-card {
+        margin-bottom: 0.5mm !important;
+        padding: 0 !important;
+    }
 
-.question-card p {
-    margin: 0 0 0.5mm 0 !important;
-    padding-bottom: 0.5mm !important;
-    font-size: 9.5pt !important;
-}
+    .question-card p {
+        margin: 0 0 0.5mm 0 !important;
+        padding-bottom: 0.5mm !important;
+        font-size: 9.5pt !important;
+    }
 
     .question-card label {
         font-size: 9pt !important;
