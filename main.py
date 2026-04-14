@@ -143,18 +143,21 @@ async def envoyer_email(fichier_path, nom_agent):
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
-        # On génère le PDF en passant l'objet data complet
+        # 1. On génère le PDF normalement
         pdf_path = await generer_pdf_dgr(data)
         
         if action == "email":
-            # IMPORTANT : On passe data.nom_agent (du texte) et non l'objet data complet
-            await envoyer_email(pdf_path, data.nom_agent)
+            # 2. Sécurité : On extrait le nom comme une simple chaîne de caractères
+            nom_agent_str = str(data.nom_agent) 
+            
+            # 3. On envoie uniquement le texte à la fonction email
+            await envoyer_email(pdf_path, nom_agent_str)
             return {"status": "success"}
             
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        # On imprime l'erreur dans la console pour débugger
-        print(f"DEBUG Erreur : {str(e)}")
+        # Affichage de l'erreur réelle dans les logs pour le diagnostic
+        print(f"ERREUR SERVEUR : {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Montage des fichiers statiques
