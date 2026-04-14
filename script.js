@@ -28,7 +28,7 @@ document.querySelectorAll('.q-checkbox').forEach(checkbox => {
 });
 
 function calculerScore(isManualClick = false) {
-    // 1. VERIFICATION DES CHAMPS (Uniquement au clic sur le bouton)
+    // 1. VERIFICATION DES CHAMPS
     if (isManualClick) {
         const nomAgent = document.getElementById('nom-agent').value.trim();
         const sigEval = document.getElementById('sig-eval').innerText.trim();
@@ -38,22 +38,10 @@ function calculerScore(isManualClick = false) {
             showAlert("Veuillez remplir le Nom de l'agent et les Signatures avant de valider.");
             return;
         }
-
-        // Vérifier que toutes les questions ont une réponse
-        for (let i = 1; i <= 5; i++) {
-            if (!document.querySelector(`input[name="q${i}"]:checked`)) {
-                showAlert(`Veuillez répondre à la question ${i} avant de valider.`);
-                return;
-            }
-        }
         scoreValide = true; 
     }
 
-    // 2. SI NON VALIDE, ON NE MONTRE RIEN
-    if (!scoreValide) {
-        document.getElementById('status-result').innerText = "En attente de validation...";
-        return;
-    }
+    if (!scoreValide) return;
 
     let score = 0;
     const solutions = {
@@ -63,60 +51,62 @@ function calculerScore(isManualClick = false) {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // --- LOGIQUE DE CORRECTION (Couleurs & Points) ---
-    
-    // Q1 (Multi-choix)
+    // --- CORRECTION Q1 ---
     const q1Corrects = ["SITADOC", "IATA"];
-    const q1Inputs = document.querySelectorAll('input[name="q1"]');
-    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
-    let q1Error = false;
-
-    q1Inputs.forEach(input => {
-        const isSolution = q1Corrects.includes(input.value);
-        input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
+    document.querySelectorAll('input[name="q1"]').forEach(input => {
+        const isSol = q1Corrects.includes(input.value);
+        if (isSol) {
+            input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
+        }
     });
 
+    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
+    let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
-            choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
+            choice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px;";
             q1Error = true;
         }
     });
     const ptsQ1 = (q1Choices.length === 2 && !q1Error) ? 20 : 0;
     score += ptsQ1;
-    document.getElementById('res-q1').innerHTML = `<span style="color:${ptsQ1 > 0 ? 'green' : 'red'}">+${ptsQ1} pts</span>`;
+    document.getElementById('res-q1').innerHTML = `<b style="color:${ptsQ1 > 0 ? 'green' : 'red'} !important;">+${ptsQ1} pts</b>`;
 
-    // Q2 à Q5 (Choix unique)
+    // --- CORRECTION Q2 à Q5 ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            const isSol = input.value === solutions[qName];
-            input.parentElement.style.setProperty('background-color', isSol ? '#d4edda' : 'transparent', 'important');
+            if (input.value === solutions[qName]) {
+                input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
+            }
         });
 
         if (userChoice) {
             if (userChoice.value === solutions[qName]) {
                 score += 20;
-                resSpan.innerHTML = `<span style="color:green">+20 pts</span>`;
+                resSpan.innerHTML = `<b style="color:green !important;">+20 pts</b>`;
             } else {
-                userChoice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
-                resSpan.innerHTML = `<span style="color:red">+0 pt</span>`;
+                userChoice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px;";
+                resSpan.innerHTML = `<b style="color:red !important;">+0 pt</b>`;
             }
         }
     }
 
-    // --- AFFICHAGE RESULTATS ---
-    document.getElementById('points-result').innerText = score;
-    document.getElementById('percent-result').innerText = score;
-    
-    const status = document.getElementById('status-result');
+    // --- MISE À JOUR DU SCORE (Indispensable pour le mail) ---
+    const pointsFinal = document.getElementById('points-result');
+    const percentFinal = document.getElementById('percent-result');
+    const statusFinal = document.getElementById('status-result');
+
+    pointsFinal.innerText = score; 
+    percentFinal.innerText = score;
+
     if (score >= 80) {
-        status.innerHTML = '<span style="color:green; font-weight:bold;">☑ RÉUSSI</span>';
+        statusFinal.innerHTML = '<b style="color:green !important;">☑ RÉUSSI</b>';
     } else {
-        status.innerHTML = '<span style="color:red; font-weight:bold;">☑ ÉCHEC</span>';
+        statusFinal.innerHTML = '<b style="color:red !important;">☑ ÉCHEC</b>';
     }
 }
 
