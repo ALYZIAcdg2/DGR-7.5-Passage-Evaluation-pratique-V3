@@ -24,13 +24,14 @@ class EvalDGR(BaseModel):
     status: str
     sig_eval: str
     sig_stagiaire: str
+    reponses: dict  # Reçoit les cases cochées du JS 
 
 # --- LOGIQUE DE GÉNÉRATION PDF (Chrome Headless) ---
 async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
     pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
     
-    # Lancement du navigateur (indispensable sur Render)
+    # Lancement du navigateur sur Render
     browser = await launch(
         args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
         handleSIGINT=False,
@@ -41,11 +42,10 @@ async def generer_pdf_dgr(data: EvalDGR):
     page = await browser.newPage()
     
     try:
-        # On charge l'application locale
-        # Render utilise localhost:10000 par défaut
+        # On charge l'application (index.html à la racine) 
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
-        # On injecte les données calculées dans le formulaire avant impression
+        # On injecte les données et on coche les cases
         await page.evaluate(f"""(d) => {{
             document.getElementById('nom-agent').value = d.nom_agent;
             document.getElementById('prenom-agent').value = d.prenom_agent;
@@ -55,21 +55,30 @@ async def generer_pdf_dgr(data: EvalDGR):
             document.getElementById('date-eval').value = d.date_eval;
             document.getElementById('lieu-eval').value = d.lieu_eval;
             
-            // Mise à jour des résultats
-            document.getElementById('points-result').innerText = d.points + "/100";
-            document.getElementById('percent-result').innerText = d.pourcentage + "%";
+            // Mise à jour visuelle des scores
+            document.getElementById('points-result').innerText = d.points;
+            document.getElementById('percent-result').innerText = d.pourcentage;
             document.getElementById('status-result').innerText = d.status;
             
             // Signatures
             document.getElementById('sig-eval').innerText = d.sig_eval;
             document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
+
+            // COCHER LES RÉPONSES 
+            for (const [name, value] of Object.entries(d.reponses)) {{
+                const el = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
+                if (el) el.checked = true;
+            }}
+
+            // Relancer le script de calcul pour colorer les bonnes/mauvaises réponses en PDF
+            if (typeof calculerScore === 'function') calculerScore();
             
             // On cache les boutons pour le PDF
             const btnArea = document.querySelector('.btn-area');
             if(btnArea) btnArea.style.display = 'none';
         }}""", data.dict())
 
-        # Création du PDF
+        # Création du PDF Haute Qualité 
         await page.pdf({
             'path': pdf_filename,
             'format': 'A4',
@@ -86,18 +95,18 @@ async def generer_pdf_dgr(data: EvalDGR):
 async def envoyer_email(fichier_path, nom_agent):
     API_KEY = os.getenv("SENDGRID_API_KEY")
     if not API_KEY:
-        raise Exception("Clé API SendGrid manquante dans les variables d'environnement")
+        raise Exception("Clé API SendGrid manquante sur Render")
 
     with open(fichier_path, "rb") as f:
         encoded_pdf = base64.b64encode(f.read()).decode()
 
     payload = {
         "personalizations": [{
-            "to": [{"email": "votre-email@domaine.com"}] # Remplacez par l'email de réception
+            "to": [{"email": "xavier.oliere@alyzia.com"}]
         }],
-        "from": {"email": "votre-email-verifie-sendgrid@domaine.com"}, # Email expéditeur validé
-        "subject": f"Résultat Évaluation DGR - {nom_agent.upper()}",
-        "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation pratique de {nom_agent}."}],
+        "from": {"email": "alyzia.cdg2@gmail.com"}, # DOIT ÊTRE VALIDE 
+        "subject": f"Évaluation DGR 7.5 - {nom_agent.upper()}",
+        "content": [{"type": "text/plain", "value": f"Évaluation de l'agent {nom_agent} ci-jointe."}],
         "attachments": [
             {
                 "content": encoded_pdf,
@@ -108,37 +117,22 @@ async def envoyer_email(fichier_path, nom_agent):
         ]
     }
 
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
     async with httpx.AsyncClient() as client:
         response = await client.post("https://api.sendgrid.com/v3/mail/send", json=payload, headers=headers)
         if response.status_code >= 400:
             raise Exception(f"Erreur SendGrid: {response.text}")
 
-# --- ROUTES ---
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
         pdf_path = await generer_pdf_dgr(data)
-        
         if action == "email":
             await envoyer_email(pdf_path, data.nom_agent)
-            return {"status": "success", "message": "Email envoyé avec le PDF."}
-        else:
-            return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
-            
+            return {"status": "success"}
+        return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        print(f"Erreur: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Servir les fichiers statiques (HTML, CSS, JS, Images)
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-if __name__ == "__main__":
-    import uvicorn
-    # Le port doit être 10000 pour Render
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
