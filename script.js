@@ -23,13 +23,14 @@ function calculerScore() {
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
     
     q1Inputs.forEach(input => {
+        // Reset et met en vert les bonnes solutions par défaut
         input.parentElement.style.backgroundColor = q1Corrects.includes(input.value) ? "#d4edda" : "transparent";
     });
 
     let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
-            choice.parentElement.style.backgroundColor = "#f8d7da";
+            choice.parentElement.style.backgroundColor = "#f8d7da"; // Rouge pour l'erreur
             q1Error = true;
         }
     });
@@ -37,47 +38,47 @@ function calculerScore() {
     const q1Points = (q1Choices.length > 0 && !q1Error) ? 20 : 0;
     score += q1Points;
     const resQ1 = document.getElementById('res-q1');
-    resQ1.textContent = `+${q1Points} pts`;
-    resQ1.style.color = q1Points > 0 ? "green" : "red";
+    if(resQ1) {
+        resQ1.textContent = `+${q1Points} pts`;
+        resQ1.style.color = q1Points > 0 ? "green" : "red";
+    }
 
-    // --- Logique Q2 à Q5 (Radio) ---
+    // --- Logique Q2 à Q5 (Boutons Radio) ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            input.parentElement.style.backgroundColor = input.parentElement.textContent.includes(solutions[qName]) ? "#d4edda" : "transparent";
+            // Met systématiquement la bonne réponse en vert
+            if (input.parentElement.textContent.includes(solutions[qName])) {
+                input.parentElement.style.backgroundColor = "#d4edda";
+            } else {
+                input.parentElement.style.backgroundColor = "transparent";
+            }
         });
 
         if (userChoice) {
             if (userChoice.parentElement.textContent.includes(solutions[qName])) {
                 score += 20;
-                resSpan.textContent = "+20 pts";
-                resSpan.style.color = "green";
+                if(resSpan) { resSpan.textContent = "+20 pts"; resSpan.style.color = "green"; }
             } else {
+                // APPLIQUE LE ROUGE SUR LE MAUVAIS CHOIX 
                 userChoice.parentElement.style.backgroundColor = "#f8d7da";
-                resSpan.textContent = "+0 pt";
-                resSpan.style.color = "red";
+                if(resSpan) { resSpan.textContent = "+0 pt"; resSpan.style.color = "red"; }
             }
         }
     }
 
-    // --- MISE À JOUR CRUCIALE POUR LE PDF ---
-    document.getElementById('points-result').textContent = score; // Supprime le "/100" ici pour le calcul
+    // Mise à jour des scores dans le HTML
+    document.getElementById('points-result').textContent = score; 
     document.getElementById('percent-result').textContent = score; 
     
     const status = document.getElementById('status-result');
-    status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
-    status.style.color = score >= 80 ? "green" : "red";
-
-    const nom = document.getElementById('nom-agent').value;
-const date = document.getElementById('date-eval').value;
-
-if (!nom || !date) {
-    showAlert("Veuillez remplir le nom de l'agent et la date avant de valider.");
-    return;
-}
+    if(status) {
+        status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
+        status.style.color = score >= 80 ? "green" : "red";
+    }
 }
 
 function genererPDF() {

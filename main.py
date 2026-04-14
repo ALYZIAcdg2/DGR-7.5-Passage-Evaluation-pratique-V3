@@ -51,20 +51,19 @@ async def generer_pdf_dgr(data: EvalDGR):
     browser = await launch(**launch_kwargs)
     page = await browser.newPage()
     
-    # IMPORTANT : Définit une taille de fenêtre large pour éviter les coupures de rendu
+    # Définit une taille de fenêtre large pour éviter les coupures [cite: 3]
     await page.setViewport({'width': 1024, 'height': 1600})
     
     try:
-        # On charge la page locale
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
-        # Injection complète des données ET déclenchement du calcul de score
         await page.evaluate(f"""(d) => {{
-            // 1. Remplissage des champs texte
             const setVal = (id, val) => {{
                 const el = document.getElementById(id);
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
+
+            // 1. Remplissage des champs texte
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -72,35 +71,37 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('fonction-eval', d.fonction_eval);
             setVal('date-eval', d.date_eval);
             setVal('lieu-eval', d.lieu_eval);
+            
+            if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
+            if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // 2. Cochage des réponses (Crucial pour le calcul)
+            // 2. Cochage des réponses (Correction pour les boutons radio)
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
                     input.checked = true;
-                    input.setAttribute('checked', 'checked');
+                    input.setAttribute('checked', 'checked'); // Force l'état visuel pour le PDF
+                    input.defaultChecked = true;
                 }}
             }}
 
-            // 3. FORCE LE CALCUL VISUEL (Couleurs et points)
-            // On appelle calculerScore() pour que le serveur génère les fonds rouges/verts
+            // 3. FORCE le calcul du score pour générer les couleurs et les points dans le PDF 
             if (typeof calculerScore === "function") {{
                 calculerScore();
             }}
 
-            // 4. Nettoyage final pour le PDF
-            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.remove());
+            // 4. Masquer les boutons pour le PDF
+            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.style.display = 'none');
         }}""", data.dict())
 
-        # On attend que le moteur de rendu applique les couleurs et les calculs
+        # Temps nécessaire pour que les couleurs s'appliquent 
         await asyncio.sleep(2) 
 
-        # Génération du PDF
         await page.pdf({
             'path': pdf_filename,
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'} # Marges gérées par le CSS
+            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'}
         })
         
     finally:
