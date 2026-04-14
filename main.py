@@ -1,5 +1,8 @@
 import asyncio
-from fastapi import FastAPI
+import os
+import base64
+import httpx
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -7,9 +10,9 @@ from pyppeteer import launch
 
 app = FastAPI()
 
-# Sert les fichiers statiques du dossier courant
+# Montage du dossier static pour le CSS, JS et les IMAGES
+# Assurez-vous que toxique.jpg est bien dans le même dossier que main.py
 app.mount("/static", StaticFiles(directory="."), name="static")
-
 
 class EvalDGR(BaseModel):
     nom_agent: str
@@ -26,182 +29,82 @@ class EvalDGR(BaseModel):
     sig_stagiaire: str
     reponses: dict
 
-
-# Page principale = ton HTML
 @app.get("/")
 async def root():
     return FileResponse("index.html")
-
-
-# Route santé optionnelle
-@app.api_route("/healthz", methods=["GET", "HEAD"])
-async def healthz():
-    return JSONResponse({"status": "ok"})
-
 
 async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
     pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
 
     browser = await launch(
-        args=[
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-        ],
-        handleSIGINT=False,
-        handleSIGTERM=False,
-        handleSIGHUP=False,
+        args=["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+        handleSIGINT=False, handleSIGTERM=False, handleSIGHUP=False
     )
-
     page = await browser.newPage()
 
     try:
-        await page.goto(
-            "https://dgr-yh51.onrender.com",
-            {
-                "waitUntil": "networkidle0",
-                "timeout": 60000,
-            },
-        )
+        # Render utilise le port 10000. Pyppeteer doit charger l'URL locale.
+        await page.goto("http://localhost:10000", {"waitUntil": "networkidle0", "timeout": 60000})
 
-        await page.waitForSelector("#document-to-print")
-        await page.emulateMedia("screen")
-        await asyncio.sleep(1)
+        await page.evaluate(f"""(d) => {{
+            // Remplissage des champs texte
+            document.getElementById('nom-agent').value = d.nom_agent;
+            document.getElementById('prenom-agent').value = d.prenom_agent;
+            document.getElementById('nom-eval').value = d.nom_eval;
+            document.getElementById('prenom-eval').value = d.prenom_eval;
+            document.getElementById('fonction-eval').value = d.fonction_eval;
+            document.getElementById('date-eval').value = d.date_eval;
+            document.getElementById('lieu-eval').value = d.lieu_eval;
+            
+            document.getElementById('points-result').innerText = d.points;
+            document.getElementById('percent-result').innerText = d.pourcentage;
+            document.getElementById('status-result').innerText = d.status;
+            document.getElementById('sig-eval').innerText = d.sig_eval;
+            document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-        await page.evaluate(
-            """(d) => {
-                const setValue = (id, value) => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = value ?? "";
-                };
+            // Application visuelle des réponses et couleurs pour le PDF
+            const solutions = {{
+                q2: "Toxique",
+                q3: "Une cigarette électronique",
+                q4: "Je préviens un responsable + périmètre de sécurité de 25m",
+                q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
+            }};
 
-                const setText = (id, value) => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerText = value ?? "";
-                };
-
-                setValue("nom-agent", d.nom_agent);
-                setValue("prenom-agent", d.prenom_agent);
-                setValue("nom-eval", d.nom_eval);
-                setValue("prenom-eval", d.prenom_eval);
-                setValue("fonction-eval", d.fonction_eval);
-                setValue("date-eval", d.date_eval);
-                setValue("lieu-eval", d.lieu_eval);
-
-                setText("points-result", d.points + " / 100");
-                setText("percent-result", d.pourcentage + " %");
-                setText("status-result", d.status);
-
-                const statusEl = document.getElementById("status-result");
-                if (statusEl) {
-                    statusEl.style.color = d.points >= 80 ? "green" : "red";
-                }
-
-                setText("sig-eval", d.sig_eval);
-                setText("sig-stagiaire", d.sig_stagiaire);
-
-                const solutions = {
-                    q2: "Toxique",
-                    q3: "Une cigarette électronique",
-                    q4: "Je préviens un responsable + périmètre de sécurité de 25m",
-                    q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
-                };
-
-                // Réinitialise styles
-                document.querySelectorAll(".question-card label").forEach(label => {
-                    label.style.backgroundColor = "transparent";
-                    label.style.color = "black";
-                    label.style.fontWeight = "normal";
-                    label.style.display = "block";
-                    label.style.width = "100%";
-                });
-
-                // Q1 cases multiples
-                if (Array.isArray(d.reponses.q1)) {
-                    d.reponses.q1.forEach(val => {
-                        const el = document.querySelector(`input[name="q1"][value="${val}"]`);
-                        if (el) {
-                            el.checked = true;
-                            el.setAttribute("checked", "checked");
-                        }
-                    });
-
-                    const q1Sitadoc = document.querySelector('input[name="q1"][value="SITADOC"]');
-                    const q1Iata = document.querySelector('input[name="q1"][value="IATA"]');
-                    const q1Repli = document.querySelector('input[name="q1"][value="REPLI"]');
-
-                    if (q1Sitadoc?.parentElement) q1Sitadoc.parentElement.style.backgroundColor = "#d4edda";
-                    if (q1Iata?.parentElement) q1Iata.parentElement.style.backgroundColor = "#d4edda";
-                    if (q1Repli?.checked && q1Repli.parentElement) {
-                        q1Repli.parentElement.style.backgroundColor = "#f8d7da";
-                        q1Repli.parentElement.style.color = "#721c24";
-                    }
-                }
-
-                // Q2 à Q5
-                Object.entries(d.reponses || {}).forEach(([name, value]) => {
-                    if (name === "q1") return;
-
-                    const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
-                    if (!el) return;
-
+            for (const [name, value] of Object.entries(d.reponses)) {{
+                const el = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
+                if (el) {{
                     el.checked = true;
-                    el.setAttribute("checked", "checked");
+                    el.setAttribute('checked', 'checked');
+                    const label = el.parentElement;
+                    if (label.textContent.includes(solutions[name] || "SITADOC") || label.textContent.includes("IATA")) {{
+                        label.style.backgroundColor = "#d4edda";
+                    }} else {{
+                        label.style.backgroundColor = "#f8d7da";
+                    }}
+                }}
+            }}
+            
+            document.querySelectorAll('.btn-area, #custom-alert').forEach(el => el.remove());
+        }}""", data.model_dump())
 
-                    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-                        const label = r.parentElement;
-                        if (!label) return;
+        await asyncio.sleep(1.5) 
 
-                        if (label.textContent.trim().includes(solutions[name] || "")) {
-                            label.style.backgroundColor = "#d4edda";
-                            label.style.fontWeight = "bold";
-                        }
-                    });
-
-                    const selectedLabel = el.parentElement;
-                    if (
-                        selectedLabel &&
-                        !selectedLabel.textContent.trim().includes(solutions[name] || "")
-                    ) {
-                        selectedLabel.style.backgroundColor = "#f8d7da";
-                        selectedLabel.style.color = "#721c24";
-                    }
-                });
-
-                document.querySelectorAll(".btn-area, #custom-alert").forEach(el => el.remove());
-            }""",
-            data.model_dump(),
-        )
-
-        await asyncio.sleep(1)
-
-        await page.pdf(
-            {
-                "path": pdf_filename,
-                "format": "A4",
-                "printBackground": True,
-                "preferCSSPageSize": True,
-                "margin": {
-                    "top": "0mm",
-                    "bottom": "0mm",
-                    "left": "5mm",
-                    "right": "5mm",
-                },
-            }
-        )
-
+        await page.pdf({
+            "path": pdf_filename,
+            "format": "A4",
+            "printBackground": True,
+            "margin": {"top": "5mm", "bottom": "5mm", "left": "5mm", "right": "5mm"}
+        })
     finally:
         await browser.close()
-
     return pdf_filename
 
-
-@app.post("/generate")
-async def generate(data: EvalDGR):
-    file_path = await generer_pdf_dgr(data)
-    return FileResponse(
-        file_path,
-        media_type="application/pdf",
-        filename=file_path,
-    )
+# ROUTE CORRIGÉE : Changement de /generate à /submit pour correspondre au JS
+@app.post("/submit")
+async def submit(data: EvalDGR, action: str = Query("download")):
+    pdf_path = await generer_pdf_dgr(data)
+    if action == "email":
+        # Logique SendGrid ici
+        return {"status": "success"}
+    return FileResponse(pdf_path, media_type="application/pdf", filename=pdf_path)
