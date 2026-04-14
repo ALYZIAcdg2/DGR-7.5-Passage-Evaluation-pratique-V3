@@ -189,11 +189,16 @@ async function communiquerServeur(action) {
     calculerScore();
 
     // Capturer l'état des réponses pour le PDF 
+// Capturer l'état des réponses précisément
     const reponses = {};
-    document.querySelectorAll('input:checked').forEach(input => {
+    // On cible spécifiquement les radios et checkboxes cochés
+    const inputsCoches = document.querySelectorAll('input[name]:checked');
+    inputsCoches.forEach(input => {
         reponses[input.name] = input.value;
     });
 
+    // Log de contrôle (tu peux le voir dans la console F12)
+    console.log("Réponses envoyées au serveur :", reponses);
     const data = {
         nom_agent: document.getElementById('nom-agent').value,
         prenom_agent: document.getElementById('prenom-agent').value,
