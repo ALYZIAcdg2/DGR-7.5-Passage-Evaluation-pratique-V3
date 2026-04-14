@@ -143,21 +143,27 @@ async def envoyer_email(fichier_path, nom_agent):
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
-        # 1. On génère le PDF normalement
+        # On extrait les données de manière sécurisée avant traitement
+        # Utilisation de .model_dump() pour Pydantic v2 ou .dict() pour v1
+        try:
+            current_data = data.model_dump()
+        except AttributeError:
+            current_data = data.dict()
+
+        # On génère le PDF en passant l'objet initial
         pdf_path = await generer_pdf_dgr(data)
         
         if action == "email":
-            # 2. Sécurité : On extrait le nom comme une simple chaîne de caractères
-            nom_agent_str = str(data.nom_agent) 
-            
-            # 3. On envoie uniquement le texte à la fonction email
-            await envoyer_email(pdf_path, nom_agent_str)
+            # On passe uniquement le nom (string) à la fonction d'envoi
+            # pour éviter de manipuler le dictionnaire complet dans SendGrid
+            agent_name = str(current_data.get("nom_agent", "Agent"))
+            await envoyer_email(pdf_path, agent_name)
             return {"status": "success"}
             
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        # Affichage de l'erreur réelle dans les logs pour le diagnostic
-        print(f"ERREUR SERVEUR : {str(e)}")
+        # On log l'erreur exacte dans le terminal de Render
+        print(f"ERREUR CRITIQUE : {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Montage des fichiers statiques
