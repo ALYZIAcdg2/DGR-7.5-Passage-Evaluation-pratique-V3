@@ -28,7 +28,6 @@ document.querySelectorAll('.q-checkbox').forEach(checkbox => {
 });
 
 function calculerScore(isManualClick = false) {
-    // 1. VERIFICATION DES CHAMPS
     if (isManualClick) {
         const nomAgent = document.getElementById('nom-agent').value.trim();
         const sigEval = document.getElementById('sig-eval').innerText.trim();
@@ -54,8 +53,8 @@ function calculerScore(isManualClick = false) {
     // --- CORRECTION Q1 ---
     const q1Corrects = ["SITADOC", "IATA"];
     document.querySelectorAll('input[name="q1"]').forEach(input => {
-        const isSol = q1Corrects.includes(input.value);
-        if (isSol) {
+        if (q1Corrects.includes(input.value)) {
+            // Forçage du vert pour le PDF
             input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
         }
     });
@@ -64,6 +63,7 @@ function calculerScore(isManualClick = false) {
     let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
+            // Forçage du rouge pour le PDF
             choice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px;";
             q1Error = true;
         }
@@ -72,7 +72,7 @@ function calculerScore(isManualClick = false) {
     score += ptsQ1;
     document.getElementById('res-q1').innerHTML = `<b style="color:${ptsQ1 > 0 ? 'green' : 'red'} !important;">+${ptsQ1} pts</b>`;
 
-    // --- CORRECTION Q2 à Q5 ---
+    // --- QUESTIONS 2 À 5 ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
@@ -81,6 +81,8 @@ function calculerScore(isManualClick = false) {
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
             if (input.value === solutions[qName]) {
                 input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
+            } else {
+                input.parentElement.style.background = "transparent";
             }
         });
 
@@ -95,14 +97,12 @@ function calculerScore(isManualClick = false) {
         }
     }
 
-    // --- MISE À JOUR DU SCORE (Indispensable pour le mail) ---
-    const pointsFinal = document.getElementById('points-result');
-    const percentFinal = document.getElementById('percent-result');
+    // --- MISE À JOUR DU SCORE ---
+    // On écrit le score brut pour éviter les doublons "/100/100" [cite: 229]
+    document.getElementById('points-result').innerText = score; 
+    document.getElementById('percent-result').innerText = score;
+
     const statusFinal = document.getElementById('status-result');
-
-    pointsFinal.innerText = score; 
-    percentFinal.innerText = score;
-
     if (score >= 80) {
         statusFinal.innerHTML = '<b style="color:green !important;">☑ RÉUSSI</b>';
     } else {

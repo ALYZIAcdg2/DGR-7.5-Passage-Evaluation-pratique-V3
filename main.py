@@ -75,24 +75,28 @@ async def generer_pdf_dgr(data: EvalDGR):
     # Préparation des données pour injection sécurisée
     data_json = json.dumps(data.dict())
 
-    # Détection du chemin Chrome
+    # Détection du chemin Chrome (Local Windows vs Render Linux)
     chrome_path = os.environ.get("CHROME_PATH")
     if not chrome_path and os.path.exists('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'):
         chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 
     browser = await launch({
         "args": ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        "executablePath": chrome_path if chrome_path else None
+        "executablePath": chrome_path if chrome_path else None,
+        "handleSIGINT": False,
+        "handleSIGTERM": False,
+        "handleSIGHUP": False
     })
     
     page = await browser.newPage()
+    # Taille de fenêtre large pour éviter les coupures 
     await page.setViewport({'width': 1024, 'height': 1600})
     
     try:
-        # Chargement de la page locale
+        # Chargement de la page locale 
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
-        # Injection et simulation du comportement de l'agent
+        # Injection et simulation du comportement de l'agent 
         await page.evaluate(f"""(dStr) => {{
             const d = JSON.parse(dStr);
             const setVal = (id, val) => {{
@@ -100,7 +104,7 @@ async def generer_pdf_dgr(data: EvalDGR):
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
 
-            // 1. Remplissage des champs texte
+            // 1. Remplissage des champs texte 
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -109,33 +113,37 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('date-eval', d.date_eval);
             setVal('lieu-eval', d.lieu_eval);
             
-            // 2. Signatures
+            // 2. Signatures 
             if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
             if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // 3. COCHAGE DES RÉPONSES (Indispensable pour que le score ne soit pas à 0)
+            // 3. COCHAGE DES RÉPONSES 
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
                     input.checked = true;
-                    // Force l'attribut visuel pour le rendu PDF
+                    // Force l'attribut visuel pour le rendu PDF 
                     input.setAttribute('checked', 'checked');
                 }}
             }}
 
-            // 4. FORCE LE CALCUL DU SCORE (Pour colorier en rouge/vert et mettre à jour le score final)
+            // 4. FORCE L'AFFICHAGE DES COULEURS ET LE CALCUL 
+            // On force la variable globale du script.js pour autoriser l'affichage immédiat
+            window.scoreValide = true; 
+            
             if (typeof calculerScore === "function") {{ 
+                // On appelle calculerScore sans argument pour déclencher le rendu visuel 
                 calculerScore(); 
             }}
 
-            // 5. Nettoyage visuel du PDF
+            // 5. Nettoyage visuel du PDF 
             document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
         }}""", data_json)
 
-        # Pause pour laisser le moteur CSS appliquer les couleurs de script.js
-        await asyncio.sleep(4) 
+        # Pause plus longue pour laisser le moteur CSS appliquer les couleurs !important 
+        await asyncio.sleep(5) 
 
-        # Génération du PDF final
+        # Génération du PDF final 
         await page.pdf({
             'path': pdf_filename,
             'format': 'A4',
