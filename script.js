@@ -8,26 +8,28 @@ function showAlert(message) {
     } else { alert(message); }
 }
 
-// Variable pour suivre si le score a été validé
-let scoreValide = false; // Bloque l'affichage tant qu'on n'a pas validé
+// Variable globale pour bloquer l'affichage tant qu'on n'a pas validé
+window.scoreValide = false; 
 
-// Fonction pour limiter à un seul choix (Questions 2 à 5)
+// --- LOGIQUE CHOIX UNIQUE Q2 à Q5 ---
 document.querySelectorAll('.q-checkbox').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
         if (this.checked) {
             const name = this.getAttribute('name');
-            if (name !== 'q1') { // On ne bloque pas la Q1 qui est multi-choix
+            // Q1 reste multi-choix, on ne traite que Q2 à Q5
+            if (name !== 'q1') { 
                 document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
                     if (cb !== this) cb.checked = false;
                 });
             }
         }
-        // Si on a déjà validé, on met à jour les couleurs en temps réel
-        if (scoreValide) calculerScore(false);
+        // Mise à jour visuelle en temps réel si déjà validé
+        if (window.scoreValide) calculerScore(false);
     });
 });
 
 function calculerScore(isManualClick = false) {
+    // 1. VERIFICATION DES CHAMPS OBLIGATOIRES (uniquement au clic bouton)
     if (isManualClick) {
         const nomAgent = document.getElementById('nom-agent').value.trim();
         const sigEval = document.getElementById('sig-eval').innerText.trim();
@@ -37,10 +39,19 @@ function calculerScore(isManualClick = false) {
             showAlert("Veuillez remplir le Nom de l'agent et les Signatures avant de valider.");
             return;
         }
-        scoreValide = true; 
+
+        // Vérification que chaque question a au moins une réponse
+        for (let i = 1; i <= 5; i++) {
+            if (!document.querySelector(`input[name="q${i}"]:checked`)) {
+                showAlert(`Veuillez répondre à la question ${i} avant de valider.`);
+                return;
+            }
+        }
+        window.scoreValide = true; 
     }
 
-    if (!scoreValide) return;
+    // 2. BLOCAGE SI NON VALIDÉ
+    if (!window.scoreValide) return;
 
     let score = 0;
     const solutions = {
@@ -50,29 +61,35 @@ function calculerScore(isManualClick = false) {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // --- CORRECTION Q1 ---
+    // --- CORRECTION Q1 (Multi-choix) ---
     const q1Corrects = ["SITADOC", "IATA"];
-    document.querySelectorAll('input[name="q1"]').forEach(input => {
+    const q1Inputs = document.querySelectorAll('input[name="q1"]');
+    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
+    let q1Error = false;
+
+    q1Inputs.forEach(input => {
         if (q1Corrects.includes(input.value)) {
-            // Forçage du vert pour le PDF
-            input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
+            // Vert forcé pour le PDF
+            input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px; border-radius: 4px;";
+        } else {
+            input.parentElement.style.backgroundColor = "transparent";
         }
     });
 
-    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
-    let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
-            // Forçage du rouge pour le PDF
-            choice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px;";
+            // Rouge forcé pour l'erreur
+            choice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px; border-radius: 4px;";
             q1Error = true;
         }
     });
+
+    // Score Q1 : +20 si exactement les 2 bonnes réponses et aucune erreur
     const ptsQ1 = (q1Choices.length === 2 && !q1Error) ? 20 : 0;
     score += ptsQ1;
-    document.getElementById('res-q1').innerHTML = `<b style="color:${ptsQ1 > 0 ? 'green' : 'red'} !important;">+${ptsQ1} pts</b>`;
+    document.getElementById('res-q1').innerHTML = `<b style="color:${ptsQ1 > 0 ? 'green' : 'red'} !important; float:right;">+${ptsQ1} pts</b>`;
 
-    // --- QUESTIONS 2 À 5 ---
+    // --- CORRECTION Q2 à Q5 (Choix unique) ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
@@ -80,25 +97,24 @@ function calculerScore(isManualClick = false) {
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
             if (input.value === solutions[qName]) {
-                input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px;";
+                input.parentElement.style.cssText = "background-color: #d4edda !important; display: block; padding: 2px; border-radius: 4px;";
             } else {
-                input.parentElement.style.background = "transparent";
+                input.parentElement.style.backgroundColor = "transparent";
             }
         });
 
         if (userChoice) {
             if (userChoice.value === solutions[qName]) {
                 score += 20;
-                resSpan.innerHTML = `<b style="color:green !important;">+20 pts</b>`;
+                resSpan.innerHTML = `<b style="color:green !important; float:right;">+20 pts</b>`;
             } else {
-                userChoice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px;";
-                resSpan.innerHTML = `<b style="color:red !important;">+0 pt</b>`;
+                userChoice.parentElement.style.cssText = "background-color: #f8d7da !important; display: block; padding: 2px; border-radius: 4px;";
+                resSpan.innerHTML = `<b style="color:red !important; float:right;">+0 pt</b>`;
             }
         }
     }
 
-    // --- MISE À JOUR DU SCORE ---
-    // On écrit le score brut pour éviter les doublons "/100/100" [cite: 229]
+    // --- MISE À JOUR DU SCORE FINAL ---
     document.getElementById('points-result').innerText = score; 
     document.getElementById('percent-result').innerText = score;
 
@@ -111,32 +127,47 @@ function calculerScore(isManualClick = false) {
 }
 
 function genererPDF() {
-    // On force le calcul pour avoir les couleurs
-    calculerScore();
+    if (!window.scoreValide) {
+        showAlert("Veuillez d'abord cliquer sur 'VALIDER SCORE' pour afficher les résultats.");
+        return;
+    }
 
     const element = document.getElementById('document-to-print');
-    
-    // Paramètres pour haute qualité et masquage des boutons
+    const nomAgent = document.getElementById('nom-agent').value || "Inconnu";
+
     const opt = {
-        margin: [0, 0], // Marges à zéro car gérées par le CSS
-        filename: `EVAL_DGR_${document.getElementById('nom-agent').value}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
+        margin: 0,
+        filename: `EVAL_DGR_${nomAgent.toUpperCase()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
-            scale: 3, // Augmente la netteté
-            useCORS: true,
-            logging: false,
-            ignoreElements: (el) => el.classList.contains('no-print') || el.classList.contains('btn-area')
+            scale: 2, 
+            useCORS: true, 
+            logging: false
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save();
+    // Masquer temporairement les zones de boutons pour le PDF propre
+    document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Réafficher les boutons
+        document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'flex');
+    });
 }
 
 async function envoyerEmail() {
+    if (!window.scoreValide) {
+        showAlert("Veuillez d'abord cliquer sur 'VALIDER SCORE' avant d'envoyer l'email.");
+        return;
+    }
+
     const btn = document.querySelector('.envoyer');
     btn.disabled = true;
     btn.textContent = "Envoi...";
+
+    // Capture des réponses (gestion spéciale pour Q1 multi-choix)
+    const q1Selected = Array.from(document.querySelectorAll('input[name="q1"]:checked')).map(el => el.value);
 
     const data = {
         nom_agent: document.getElementById('nom-agent').value,
@@ -146,13 +177,13 @@ async function envoyerEmail() {
         fonction_eval: document.getElementById('fonction-eval').value,
         date_eval: document.getElementById('date-eval').value,
         lieu_eval: document.getElementById('lieu-eval').value,
-        points: parseInt(document.getElementById('points-result').textContent) || 0,
-        pourcentage: parseFloat(document.getElementById('percent-result').textContent) || 0,
+        points: parseInt(document.getElementById('points-result').innerText) || 0,
+        pourcentage: parseFloat(document.getElementById('percent-result').innerText) || 0,
         status: document.getElementById('status-result').innerText,
         sig_eval: document.getElementById('sig-eval').innerText,
         sig_stagiaire: document.getElementById('sig-stagiaire').innerText,
         reponses: {
-            q1: document.querySelector('input[name="q1"]:checked')?.value || "",
+            q1: q1Selected, // Envoie un tableau des réponses cochées
             q2: document.querySelector('input[name="q2"]:checked')?.value || "",
             q3: document.querySelector('input[name="q3"]:checked')?.value || "",
             q4: document.querySelector('input[name="q4"]:checked')?.value || "",
