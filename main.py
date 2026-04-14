@@ -29,80 +29,7 @@ class EvalDGR(BaseModel):
     sig_stagiaire: str
     reponses: dict 
 
-async def generer_pdf_dgr(data: EvalDGR):
-    nom_clean = data.nom_agent.replace(" ", "_").upper()
-    pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
-    
-    # Détection automatique du chemin Chrome (Local Windows vs Render Linux)
-    chrome_path = os.environ.get("CHROME_PATH")
-    if not chrome_path and os.path.exists('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'):
-        chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 
-    launch_kwargs = {
-        "args": ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-        "handleSIGINT": False,
-        "handleSIGTERM": False,
-        "handleSIGHUP": False
-    }
-    
-    if chrome_path:
-        launch_kwargs["executablePath"] = chrome_path
-
-    browser = await launch(**launch_kwargs)
-    page = await browser.newPage()
-    
-    # Définit une taille de fenêtre large pour éviter les coupures
-    await page.setViewport({'width': 1024, 'height': 1600})
-    
-    try:
-        await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
-
-        await page.evaluate(f"""(d) => {{
-            // Remplissage texte
-            const setVal = (id, val) => {{
-                const el = document.getElementById(id);
-                if(el) {{ el.value = val; el.setAttribute('value', val); }}
-            }};
-            setVal('nom-agent', d.nom_agent);
-            setVal('prenom-agent', d.prenom_agent);
-            setVal('nom-eval', d.nom_eval);
-            setVal('prenom-eval', d.prenom_eval);
-            setVal('fonction-eval', d.fonction_eval);
-            setVal('date-eval', d.date_eval);
-            setVal('lieu-eval', d.lieu_eval);
-
-            // Cochage des réponses avec FORCE visuelle pour le PDF
-            for (const [name, value] of Object.entries(d.reponses)) {{
-                const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
-                if (input) {{
-                    input.checked = true;
-                    input.setAttribute('checked', 'checked'); // Indispensable pour le moteur PDF
-                    input.click(); // Déclenche les couleurs dans script.js
-                }}
-            }}
-
-            // On lance le calcul manuellement pour être sûr
-            if (typeof calculerScore === "function") {{
-                calculerScore();
-            }}
-
-            // On masque les boutons
-            document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
-        }}""", data.dict())
-
-        # --- CHANGEMENT ICI : On attend 5 secondes complètes ---
-        await asyncio.sleep(5) 
-
-        return await page.pdf({{
-            'format': 'A4',
-            'printBackground': True,
-            'margin': {{'top': '0', 'bottom': '0', 'left': '0', 'right': '0'}}
-        }})
-        
-    finally:
-        await browser.close()
-    
-    return pdf_filename
 
 async def envoyer_email(fichier_path, nom_agent):
     API_KEY = os.environ.get("SENDGRID_API_KEY")
@@ -140,31 +67,91 @@ async def envoyer_email(fichier_path, nom_agent):
         if r.status_code >= 400:
             raise Exception(f"Erreur SendGrid: {r.text}")
 
+async def generer_pdf_dgr(data: EvalDGR):
+    nom_clean = data.nom_agent.replace(" ", "_").upper()
+    pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
+    
+    import json
+    # On prépare les données en JSON propre pour le JavaScript
+    data_json = json.dumps(data.dict())
+
+    chrome_path = os.environ.get("CHROME_PATH")
+    if not chrome_path and os.path.exists('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'):
+        chrome_path = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+
+    browser = await launch({
+        "args": ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        "executablePath": chrome_path if chrome_path else None
+    })
+    
+    page = await browser.newPage()
+    await page.setViewport({'width': 1024, 'height': 1600})
+    
+    try:
+        await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
+
+        # Injection des données et simulation du remplissage
+        await page.evaluate(f"""(dStr) => {{
+            const d = JSON.parse(dStr);
+            const setVal = (id, val) => {{
+                const el = document.getElementById(id);
+                if(el) {{ el.value = val; el.setAttribute('value', val); }}
+            }};
+
+            setVal('nom-agent', d.nom_agent);
+            setVal('prenom-agent', d.prenom_agent);
+            setVal('nom-eval', d.nom_eval);
+            setVal('prenom-eval', d.prenom_eval);
+            setVal('fonction-eval', d.fonction_eval);
+            setVal('date-eval', d.date_eval);
+            setVal('lieu-eval', d.lieu_eval);
+            
+            if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
+            if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
+
+            // Cocher les radios et déclencher les styles
+            for (const [name, value] of Object.entries(d.reponses)) {{
+                const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
+                if (input) {{
+                    input.checked = true;
+                    input.setAttribute('checked', 'checked');
+                    input.click(); // Déclenche calculerScore() via l'event listener
+                }}
+            }}
+
+            // Force le calcul final
+            if (typeof calculerScore === "function") {{ calculerScore(); }}
+
+            document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
+        }}""", data_json)
+
+        await asyncio.sleep(4) # Temps pour que les couleurs s'appliquent sur le serveur
+
+        await page.pdf({
+            'path': pdf_filename,
+            'format': 'A4',
+            'printBackground': True,
+            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'}
+        })
+        
+    finally:
+        await browser.close()
+    
+    return pdf_filename
+
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
-        # 1. Conversion immédiate en dictionnaire simple pour éviter les conflits de type
-        # On utilise model_dump() pour la compatibilité Pydantic v2
-        try:
-            payload_data = data.model_dump()
-        except AttributeError:
-            payload_data = data.dict()
-
-        # 2. Génération du PDF (on passe l'objet original 'data' à la fonction)
         pdf_path = await generer_pdf_dgr(data)
         
         if action == "email":
-            # 3. Sécurité : On extrait uniquement le NOM (une chaîne de caractères)
-            # On ne passe JAMAIS l'objet complet 'data' ou 'payload_data' à la fonction mail
-            nom_agent_final = str(payload_data.get("nom_agent", "Agent"))
-            
-            await envoyer_email(pdf_path, nom_agent_final)
+            # On passe une simple string pour le nom, pas l'objet dict
+            await envoyer_email(pdf_path, str(data.nom_agent))
             return {"status": "success"}
             
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        # Log détaillé pour le diagnostic dans la console Render
-        print(f"ERREUR SERVEUR : {str(e)}")
+        print(f"Erreur: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Montage des fichiers statiques
