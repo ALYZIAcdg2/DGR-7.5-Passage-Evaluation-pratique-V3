@@ -65,6 +65,9 @@ function calculerScore() {
         });
 
         if (userChoice) {
+    // Force l'affichage du point même sur le PDF du serveur
+    userChoice.style.setProperty('outline', '2px solid blue', 'important');
+    userChoice.style.setProperty('appearance', 'auto', 'important');
             const parent = userChoice.parentElement;
             if (parent.textContent.includes(solutions[qName])) {
                 score += 20;

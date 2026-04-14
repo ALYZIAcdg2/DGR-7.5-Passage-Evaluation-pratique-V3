@@ -98,7 +98,7 @@ async def generer_pdf_dgr(data: EvalDGR):
         }}""", data.dict())
 
         # Temps nécessaire pour que les couleurs s'appliquent 
-        await asyncio.sleep(2) 
+        await asyncio.sleep(4) 
 
         await page.pdf({
             'path': pdf_filename,
