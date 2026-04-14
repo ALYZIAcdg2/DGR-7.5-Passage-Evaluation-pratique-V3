@@ -137,13 +137,20 @@ async def envoyer_email(fichier_path, nom_agent):
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
+        # Convertir les données en dictionnaire Python standard pour éviter les conflits Pydantic/Dict
+        data_dict = data.model_dump() # Si vous utilisez Pydantic v2
+        # data_dict = data.dict() # Utilisez ceci si model_dump() ne fonctionne pas (Pydantic v1)
+
         pdf_path = await generer_pdf_dgr(data)
+        
         if action == "email":
             await envoyer_email(pdf_path, data.nom_agent)
             return {"status": "success"}
+            
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        print(f"Erreur: {str(e)}")
+        # Afficher l'erreur exacte dans les logs Render
+        print(f"Erreur détaillée : {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Montage des fichiers statiques
