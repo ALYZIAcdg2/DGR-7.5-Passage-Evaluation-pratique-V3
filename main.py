@@ -109,14 +109,17 @@ async def envoyer_email(fichier_path, nom_agent):
     if not API_KEY:
         raise Exception("Clé API SendGrid manquante.")
 
+    # Sécurité : s'assurer que nom_agent est bien une chaîne de caractères
+    nom_str = str(nom_agent)
+
     with open(fichier_path, "rb") as f:
         encoded_pdf = base64.b64encode(f.read()).decode()
 
     payload = {
         "personalizations": [{"to": [{"email": "xavier.oliere@alyzia.com"}]}],
         "from": {"email": "alyzia.cdg2@gmail.com"},
-        "subject": f"Évaluation DGR - {nom_agent.upper()}",
-        "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation de l'agent {nom_agent}."}],
+        "subject": f"Évaluation DGR - {nom_str.upper()}",
+        "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation de l'agent {nom_str}."}],
         "attachments": [{
             "content": encoded_pdf,
             "filename": os.path.basename(fichier_path),
@@ -129,7 +132,10 @@ async def envoyer_email(fichier_path, nom_agent):
         r = await client.post(
             "https://api.sendgrid.com/v3/mail/send", 
             json=payload, 
-            headers={"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+            headers={
+                "Authorization": f"Bearer {API_KEY}", 
+                "Content-Type": "application/json"
+            }
         )
         if r.status_code >= 400:
             raise Exception(f"Erreur SendGrid: {r.text}")
@@ -137,20 +143,18 @@ async def envoyer_email(fichier_path, nom_agent):
 @app.post("/submit")
 async def submit_evaluation(data: EvalDGR, action: str = Query("download")):
     try:
-        # Convertir les données en dictionnaire Python standard pour éviter les conflits Pydantic/Dict
-        data_dict = data.model_dump() # Si vous utilisez Pydantic v2
-        # data_dict = data.dict() # Utilisez ceci si model_dump() ne fonctionne pas (Pydantic v1)
-
+        # On génère le PDF en passant l'objet data complet
         pdf_path = await generer_pdf_dgr(data)
         
         if action == "email":
+            # IMPORTANT : On passe data.nom_agent (du texte) et non l'objet data complet
             await envoyer_email(pdf_path, data.nom_agent)
             return {"status": "success"}
             
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     except Exception as e:
-        # Afficher l'erreur exacte dans les logs Render
-        print(f"Erreur détaillée : {str(e)}")
+        # On imprime l'erreur dans la console pour débugger
+        print(f"DEBUG Erreur : {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Montage des fichiers statiques
