@@ -85,7 +85,11 @@ async def generer_pdf_dgr(data: EvalDGR):
     })
     
     page = await browser.newPage()
-    await page.setViewport({'width': 1024, 'height': 1600})
+    pdf_content = await page.pdf({
+    'format': 'A4',
+    'printBackground': True,
+    'margin': {'top': '5mm', 'bottom': '5mm', 'left': '5mm', 'right': '5mm'}
+})
     
     try:
         # Utilisation de l'URL locale Render

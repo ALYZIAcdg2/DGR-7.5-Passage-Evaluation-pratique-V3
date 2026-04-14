@@ -12,13 +12,13 @@ body {
 }
 
 .container { 
-    max-width: 850px; 
+    max-width: 800px; 
     margin: auto; 
     background: white; 
-    padding: 15px; 
+    padding: 8px; 
     border: 1px solid #000; 
     box-sizing: border-box;
-    margin-bottom: 100px !important; /* CHANGEMENT : Empêche les boutons de masquer le bas du formulaire */
+    margin-bottom: 0px !important; /* CHANGEMENT : Empêche les boutons de masquer le bas du formulaire */
 }
 
 /* --- EN-TÊTE --- */
@@ -303,5 +303,24 @@ body {
     .info-block {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+    }
+}
+#document-to-print {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 5mm;
+    box-sizing: border-box;
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    #document-to-print {
+        width: 210mm;
+        height: 297mm;
+        page-break-after: avoid;
     }
 }
