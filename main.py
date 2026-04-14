@@ -51,7 +51,7 @@ async def generer_pdf_dgr(data: EvalDGR):
     browser = await launch(**launch_kwargs)
     page = await browser.newPage()
     
-    # Définit une taille de fenêtre large pour éviter les coupures [cite: 3]
+    # Définit une taille de fenêtre large pour éviter les coupures
     await page.setViewport({'width': 1024, 'height': 1600})
     
     try:
@@ -75,23 +75,23 @@ async def generer_pdf_dgr(data: EvalDGR):
             if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
             if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-// 2. Cochage des réponses avec simulation de clic
-            for (const [name, value] of Object.entries(d.reponses)) {
-                const input = document.querySelector(`input[name="${name}"][value="${value}"]`);
-                if (input) {
+            // 2. Cochage des réponses avec simulation de clic
+            for (const [name, value] of Object.entries(d.reponses)) {{
+                const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
+                if (input) {{
                     input.checked = true;
                     input.setAttribute('checked', 'checked');
-                    input.dispatchEvent(new Event('change', { bubbles: true })); // Déclenche les écouteurs
-                    input.click(); // Simule un clic physique pour forcer le rendu
-                }
-            }
+                    input.dispatchEvent(new Event('change', {{ bubbles: true }})); 
+                    input.click(); 
+                }}
+            }}
 
             // 3. Appel du calcul après un micro-délai pour laisser le DOM respirer
-            setTimeout(() => {
-                if (typeof calculerScore === "function") {
+            setTimeout(() => {{
+                if (typeof calculerScore === "function") {{
                     calculerScore();
-                }
-            }, 100);
+                }}
+            }}, 100);
 
             // 4. Masquer les boutons pour le PDF
             document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.style.display = 'none');
