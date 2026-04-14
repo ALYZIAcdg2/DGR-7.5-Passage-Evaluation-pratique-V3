@@ -17,19 +17,17 @@ function calculerScore() {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // --- Logique Q1 (Checkboxes) ---
+    // --- Logique Q1 (Checkboxes multi-choix d'origine) ---
     const q1Corrects = ["SITADOC", "IATA"];
     const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
     let q1Error = false;
     
-    // RESET et Vert pour les bonnes réponses par défaut
     q1Inputs.forEach(input => {
         const isCorrect = q1Corrects.includes(input.value);
         input.parentElement.style.setProperty('background-color', isCorrect ? '#d4edda' : 'transparent', 'important');
     });
 
-    // ROUGE pour les erreurs de l'agent
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
             choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
@@ -45,34 +43,36 @@ function calculerScore() {
         resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
     }
 
-    // --- Logique Q2 à Q5 (Radios) ---
+    // --- Logique Q2 à Q5 (Nouvelles Checkboxes à choix unique) ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
+        // On cherche la checkbox cochée pour cette question
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
-        const allRadios = document.querySelectorAll(`input[name="${qName}"]`);
+        const allCheckboxes = document.querySelectorAll(`input[name="${qName}"]`);
         
-        // RESET et Vert pour la solution sur chaque ligne
-        allRadios.forEach(input => {
-            const isSolution = input.parentElement.textContent.includes(solutions[qName]);
+        // RESET et Vert pour la bonne réponse (solution)
+        allCheckboxes.forEach(input => {
+            const isSolution = input.value === solutions[qName];
             input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
             
-            // Force l'affichage du bouton radio (cercle) pour le moteur PDF
-            input.style.setProperty('appearance', 'auto', 'important');
+            // Forçage de l'apparence checkbox pour le moteur PDF de Render
+            input.style.setProperty('appearance', 'checkbox', 'important');
+            input.style.setProperty('-webkit-appearance', 'checkbox', 'important');
         });
 
         if (userChoice) {
-            // Style pour forcer la visibilité du point bleu sur le PDF
+            // Style visuel pour la coche dans le PDF
             userChoice.style.setProperty('accent-color', 'blue', 'important');
 
-            if (userChoice.parentElement.textContent.includes(solutions[qName])) {
+            if (userChoice.value === solutions[qName]) {
                 score += 20;
                 if(resSpan) {
                     resSpan.textContent = "+20 pts";
                     resSpan.style.setProperty('color', 'green', 'important');
                 }
             } else {
-                // APPLIQUE LE ROUGE sur le mauvais choix de l'agent
+                // ROUGE sur le mauvais choix de l'agent
                 userChoice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
                 if(resSpan) {
                     resSpan.textContent = "+0 pt";
@@ -80,13 +80,12 @@ function calculerScore() {
                 }
             }
         } else if (resSpan) {
-            // Si aucune réponse n'est cochée
             resSpan.textContent = "+0 pt";
             resSpan.style.setProperty('color', 'red', 'important');
         }
     }
 
-    // --- Mise à jour finale (Utilisation de innerText pour le serveur) ---
+    // --- Mise à jour finale du score ---
     const pointsElem = document.getElementById('points-result');
     const percentElem = document.getElementById('percent-result');
     
@@ -100,6 +99,18 @@ function calculerScore() {
         status.style.setProperty('font-weight', 'bold', 'important');
     }
 }
+
+// AJOUT : Script de limitation de sélection (Choix unique Q2-Q5)
+document.querySelectorAll('.q-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+        if (this.checked) {
+            document.querySelectorAll(`input[name="${this.name}"]`).forEach(other => {
+                if (other !== this) other.checked = false;
+            });
+        }
+        calculerScore();
+    });
+});
 
 function genererPDF() {
     // On force le calcul pour avoir les couleurs
