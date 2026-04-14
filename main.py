@@ -75,10 +75,16 @@ async def generer_pdf_dgr(data: EvalDGR):
     })
 
     page = await browser.newPage()
+
+    # 🔥 FULL SYNC MODE
     await page.emulateMedia('screen')
 
-    # 🔥 VIEWPORT A4 EXACT
-    await page.setViewport({'width': 794, 'height': 1123})
+    # 🔥 VIEWPORT A4 EXACT + QUALITÉ
+    await page.setViewport({
+        'width': 794,
+        'height': 1123,
+        'deviceScaleFactor': 2
+    })
 
     try:
         await page.goto('http://localhost:10000', {
@@ -125,14 +131,30 @@ async def generer_pdf_dgr(data: EvalDGR):
                 .forEach(el => el.style.display = 'none');
         }}""", data_json)
 
-        await asyncio.sleep(3)
+        # 🔥 ATTENTE DOM STABLE
+        await page.waitForSelector('#document-to-print')
+        await asyncio.sleep(1)
 
-        # 🔥 PDF FINAL PRO
+        # 🔥 RESET ÉCHELLE
+        await page.evaluate("""
+        () => {
+            document.body.style.zoom = "1";
+            document.body.style.margin = "0";
+        }
+        """)
+
+        # 🔥 PDF FINAL PARFAIT
         pdf_content = await page.pdf({
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'},
-            'preferCSSPageSize': True
+            'margin': {
+                'top': '0mm',
+                'bottom': '0mm',
+                'left': '0mm',
+                'right': '0mm'
+            },
+            'preferCSSPageSize': True,
+            'scale': 1
         })
 
         with open(pdf_filename, "wb") as f:
