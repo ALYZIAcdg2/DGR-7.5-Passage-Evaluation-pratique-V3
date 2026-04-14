@@ -140,7 +140,7 @@ function genererPDF() {
 
     const opt = {
         margin: 0,
-        filename: `EVAL_DGR_${nomAgent.toUpperCase()}.pdf`,
+        filename: `EVALUATION_PRATIQUE_DGR 7.5_${nomAgent.toUpperCase()}.pdf`,
         image: { type: 'jpeg', quality: 1 },
 
         html2canvas: { 

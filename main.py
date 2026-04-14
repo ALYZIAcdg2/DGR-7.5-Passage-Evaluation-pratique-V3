@@ -41,7 +41,7 @@ async def envoyer_email(fichier_path, nom_agent):
     payload = {
         "personalizations": [{"to": [{"email": "xavier.oliere@alyzia.com"}]}],
         "from": {"email": "alyzia.cdg2@gmail.com"},
-        "subject": f"Évaluation DGR - {nom_agent.upper()}",
+        "subject": f"EVALUATION_PRATIQUE_DGR 7.5 - {nom_agent.upper()}",
         "content": [{"type": "text/plain", "value": f"Veuillez trouver ci-joint l'évaluation de l'agent {nom_agent}."}],
         "attachments": [{
             "content": encoded_pdf,
@@ -66,7 +66,7 @@ async def envoyer_email(fichier_path, nom_agent):
 
 async def generer_pdf_dgr(data: EvalDGR):
     nom_clean = data.nom_agent.replace(" ", "_").upper()
-    pdf_filename = f"EVAL_DGR_{nom_clean}.pdf"
+    pdf_filename = f"EVALUATION_PRATIQUE_DGR 7.5_{nom_clean}.pdf"
 
     data_json = json.dumps(data.dict())
 
@@ -75,6 +75,7 @@ async def generer_pdf_dgr(data: EvalDGR):
     })
 
     page = await browser.newPage()
+    await page.emulateMedia('screen')
 
     # 🔥 VIEWPORT A4 EXACT
     await page.setViewport({'width': 794, 'height': 1123})
