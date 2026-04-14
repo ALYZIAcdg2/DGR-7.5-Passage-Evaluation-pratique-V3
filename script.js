@@ -9,41 +9,35 @@ function showAlert(message) {
 }
 
 // Variable pour suivre si le score a été validé
-let scoreValide = false;
+let scoreValide = false; // Bloque l'affichage au départ
 
 function calculerScore(isManualClick = false) {
-    // Si c'est un changement automatique (clic radio) et qu'on n'a pas encore validé, on ne montre rien
-    if (!isManualClick && !scoreValide) return;
-
-    // Validation des champs obligatoires lors du clic sur le bouton
+    // 1. SI CLIC SUR BOUTON : ON VÉRIFIE LES CHAMPS
     if (isManualClick) {
-        const champsObligatoires = [
-            { id: 'nom-agent', label: 'Nom de l\'agent' },
-            { id: 'nom-eval', label: 'Nom de l\'évaluateur' },
-            { id: 'date-eval', label: 'Date de l\'évaluation' },
-            { id: 'lieu-eval', label: 'Lieu de l\'évaluation' },
-            { id: 'sig-eval', label: 'Signature évaluateur', isText: true },
-            { id: 'sig-stagiaire', label: 'Signature stagiaire', isText: true }
-        ];
+        const nomAgent = document.getElementById('nom-agent').value.trim();
+        const nomEval = document.getElementById('nom-eval').value.trim();
+        const dateEval = document.getElementById('date-eval').value.trim();
+        const lieuEval = document.getElementById('lieu-eval').value.trim();
+        const sigEval = document.getElementById('sig-eval').innerText.trim();
+        const sigStag = document.getElementById('sig-stagiaire').innerText.trim();
 
-        for (let champ of champsObligatoires) {
-            const el = document.getElementById(champ.id);
-            const val = champ.isText ? el.innerText.trim() : el.value.trim();
-            if (!val) {
-                showAlert(`Le champ "${champ.label}" est obligatoire.`);
-                return;
-            }
+        if (!nomAgent || !nomEval || !dateEval || !lieuEval || !sigEval || !sigStag) {
+            showAlert("Veuillez remplir tous les champs (Nom, Date, Lieu et Signatures) avant de valider.");
+            return;
         }
 
-        // Vérification que toutes les questions ont une réponse
+        // Vérifier que toutes les questions ont une réponse
         for (let i = 1; i <= 5; i++) {
             if (!document.querySelector(`input[name="q${i}"]:checked`)) {
-                showAlert(`Veuillez répondre à la question ${i}.`);
+                showAlert(`Veuillez répondre à la question ${i} avant de valider.`);
                 return;
             }
         }
-        scoreValide = true;
+        scoreValide = true; // Autorise l'affichage des couleurs
     }
+
+    // 2. SI PAS ENCORE VALIDÉ, ON ARRÊTE ICI (Pas de couleurs)
+    if (!scoreValide) return;
 
     let score = 0;
     const solutions = {
@@ -53,20 +47,17 @@ function calculerScore(isManualClick = false) {
         q5: "Une boîte sécurisée de cartouches de chasse (4.5Kg brut)"
     };
 
-    // --- Logique Q1 ---
+    // --- QUESTION 1 ---
     const q1Corrects = ["SITADOC", "IATA"];
-    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
-    
+    const q1Choices = document.querySelectorAll('input[name="q1"]:checked');
+    let q1Error = false;
+
     q1Inputs.forEach(input => {
-        if (q1Corrects.includes(input.value)) {
-            input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
-        } else {
-            input.parentElement.style.setProperty('background-color', 'transparent', 'important');
-        }
+        const isSolution = q1Corrects.includes(input.value);
+        input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
     });
 
-    let q1Error = false;
     q1Choices.forEach(choice => {
         if (!q1Corrects.includes(choice.value)) {
             choice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
@@ -76,63 +67,37 @@ function calculerScore(isManualClick = false) {
 
     const q1Points = (q1Choices.length > 0 && !q1Error) ? 20 : 0;
     score += q1Points;
-    const resQ1 = document.getElementById('res-q1');
-    if(resQ1) {
-        resQ1.textContent = `+${q1Points} pts`;
-        resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
-    }
+    document.getElementById('res-q1').innerHTML = `<span style="color:${q1Points > 0 ? 'green' : 'red'}">+${q1Points} pts</span>`;
 
-    // --- Logique Q2 à Q5 ---
+    // --- QUESTIONS 2 À 5 ---
     for (let i = 2; i <= 5; i++) {
         const qName = `q${i}`;
         const userChoice = document.querySelector(`input[name="${qName}"]:checked`);
         const resSpan = document.getElementById(`res-${qName}`);
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            if (input.parentElement.textContent.trim().includes(solutions[qName])) {
-                input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
-            } else {
-                input.parentElement.style.setProperty('background-color', 'transparent', 'important');
-            }
+            const isSolution = input.value === solutions[qName];
+            input.parentElement.style.setProperty('background-color', isSolution ? '#d4edda' : 'transparent', 'important');
         });
 
         if (userChoice) {
-            userChoice.style.setProperty('outline', '2px solid blue', 'important');
-            userChoice.style.setProperty('appearance', 'auto', 'important');
-            
-            if (userChoice.parentElement.textContent.trim().includes(solutions[qName])) {
+            if (userChoice.value === solutions[qName]) {
                 score += 20;
-                if(resSpan) {
-                    resSpan.textContent = "+20 pts";
-                    resSpan.style.setProperty('color', 'green', 'important');
-                }
+                resSpan.innerHTML = `<span style="color:green">+20 pts</span>`;
             } else {
                 userChoice.parentElement.style.setProperty('background-color', '#f8d7da', 'important');
-                if(resSpan) {
-                    resSpan.textContent = "+0 pt";
-                    resSpan.style.setProperty('color', 'red', 'important');
-                }
+                resSpan.innerHTML = `<span style="color:red">+0 pt</span>`;
             }
         }
     }
 
-    // Nettoyage des doublons d'affichage pour le PDF
-    document.getElementById('points-result').innerText = score; 
-    document.getElementById('percent-result').innerText = score; 
+    // --- AFFICHAGE FINAL ---
+    document.getElementById('points-result').innerText = score;
+    document.getElementById('percent-result').innerText = score;
     
     const status = document.getElementById('status-result');
-    if(status) {
-        status.innerHTML = score >= 80 ? '<span style="color:green">☑ RÉUSSI</span>' : '<span style="color:red">☑ ÉCHEC</span>';
-        status.style.setProperty('font-weight', 'bold', 'important');
-    }
+    status.innerHTML = score >= 80 ? '<span style="color:green">☑ RÉUSSI</span>' : '<span style="color:red">☑ ÉCHEC</span>';
 }
-
-// Modifier les écouteurs d'événements pour ne pas calculer immédiatement
-document.querySelectorAll('input').forEach(input => {
-    input.addEventListener('change', () => {
-        if (scoreValide) calculerScore(false);
-    });
-});
 
 function genererPDF() {
     // On force le calcul pour avoir les couleurs
