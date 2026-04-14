@@ -293,3 +293,40 @@ body {
         break-inside: avoid !important;
     }
 }
+
+print_css = """
+@media print {
+    body {
+        background: white !important;
+        padding: 0 !important;
+    }
+
+    .container {
+        width: 210mm !important;
+        max-width: 210mm !important;
+        padding: 5mm !important;
+        border: none !important;
+    }
+
+    .btn-area {
+        display: none !important;
+    }
+}
+"""
+# @media print {
+#     body {
+#         background: white !important;
+#         padding: 0 !important;
+#     }
+#
+#     .container {
+#         width: 210mm !important;
+#         max-width: 210mm !important;
+#         padding: 5mm !important;
+#         border: none !important;
+#     }
+#
+#     .btn-area {
+#         display: none !important;
+#     }
+# }
