@@ -11,14 +11,16 @@ body {
     margin: 0;
 }
 
+/* 🔥 VERSION A4 PRO */
 .container { 
-    max-width: 800px; 
+    width: 190mm;
+    max-width: 190mm;
     margin: auto; 
     background: white; 
-    padding: 8px; 
-    border: 1px solid #000; 
+    padding: 4mm;
+    border: none;
     box-sizing: border-box;
-    margin-bottom: 0px !important; /* CHANGEMENT : Empêche les boutons de masquer le bas du formulaire */
+    overflow: hidden; /* 🔥 évite page 2 */
 }
 
 /* --- EN-TÊTE --- */
@@ -61,7 +63,7 @@ body {
 }
 
 /* --- BLOCS D'INFORMATIONS --- */
-.form-block { margin-bottom: 10px; border: 1px solid #000; }
+.form-block { margin-bottom: 5px; border: 1px solid #000; }
 .block-header { background: var(--orange); color: white; text-align: center; padding: 4px; font-weight: bold; font-size: 0.9rem; }
 .block-content { display: grid; }
 .grid-2 { grid-template-columns: 1fr 1fr; }
@@ -70,45 +72,46 @@ body {
 .input-group { border-right: 1px solid #000; }
 .input-group:last-child { border-right: none; }
 .input-group label { display: block; background: #ddd; text-align: center; font-size: 0.75rem; font-weight: bold; padding: 2px; border-bottom: 1px solid #000; }
-.input-group input { width: 100%; border: none; padding: 8px; box-sizing: border-box; text-align: center; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; }
+.input-group input { width: 100%; border: none; padding: 6px; box-sizing: border-box; text-align: center; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; }
 
 /* --- RÉSULTATS ET VALIDATION --- */
-.result-container, .info-block { display: flex; border: 1px solid #000; margin-bottom: 8px; }
-.result-sidebar, .info-sidebar { background: var(--orange); color: white; width: 28%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 5px; font-weight: bold; font-size: 0.9rem; border-right: 1px solid #000; }
+.result-container, .info-block { display: flex; border: 1px solid #000; margin-bottom: 6px; }
+.result-sidebar, .info-sidebar { background: var(--orange); color: white; width: 28%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px; font-weight: bold; font-size: 0.85rem; border-right: 1px solid #000; }
 .result-data, .info-content { width: 72%; padding: 0; }
 
 .res-row { display: flex; border-bottom: 1px solid #000; }
 .res-row:last-child { border-bottom: none; }
 .res-row span {
     width: 45%;
-    padding: 5px;
+    padding: 4px;
     border-right: 1px solid #000;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
 }
-.res-row input { width: 55%; border: none; padding: 4px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase; text-align: center; }
-.score-display { width: 55%; text-align: center; padding: 5px; font-size: 0.95rem; }
+.res-row input { width: 55%; border: none; padding: 3px; font-size: 0.85rem; font-weight: bold; text-transform: uppercase; text-align: center; }
+.score-display { width: 55%; text-align: center; padding: 4px; font-size: 0.85rem; }
 
-.info-content { padding: 5px; font-size: 0.8rem; line-height: 1.15; }
-.small-text { font-size: 0.68rem; line-height: 1.1; }
+.info-content { padding: 4px; font-size: 0.75rem; line-height: 1.1; }
+.small-text { font-size: 0.65rem; line-height: 1.05; }
 
 /* --- QUESTIONNAIRE --- */
 .q-title {
     border-bottom: 2px solid var(--orange);
     color: var(--orange);
-    margin: 8px 0 2px 0;
-    font-size: 1.1rem;
+    margin: 6px 0 2px 0;
+    font-size: 1rem;
     line-height: 1;
     padding-bottom: 2px;
 }
+
 .question-card {
     background: transparent;
-    padding: 2px 0 0 0;
-    margin-bottom: 6px;
+    padding: 0;
+    margin-bottom: 4px;
     border: none !important;
 }
 
@@ -116,9 +119,10 @@ body {
     display: block;
     width: 100%;
     border-bottom: 2px solid var(--orange) !important;
-    padding-bottom: 3px;
-    margin: 0 0 4px 0;
+    padding-bottom: 2px;
+    margin: 0 0 3px 0;
     font-weight: bold;
+    font-size: 0.9rem;
 }
 
 .question-flex-container {
@@ -129,15 +133,15 @@ body {
 
 .options-box { width: 75%; }
 .image-box { width: 20%; text-align: right; }
-.pictogram-img-right { width: 60px !important; height: auto; border: 1px solid #ccc; }
+.pictogram-img-right { width: 50px !important; height: auto; border: 1px solid #ccc; }
 
-.question-card label { display: block; margin: 5px 0; cursor: pointer; font-size: 0.9rem; }
+.question-card label { display: block; margin: 3px 0; cursor: pointer; font-size: 0.8rem; }
 
 /* --- SIGNATURES --- */
 .signature-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 6px;
     border: 2px solid #000;
 }
 
@@ -145,8 +149,8 @@ body {
     background-color: var(--orange);
     color: white;
     border: 1px solid #000;
-    padding: 5px;
-    font-size: 1rem;
+    padding: 4px;
+    font-size: 0.9rem;
     text-align: center;
 }
 
@@ -154,15 +158,15 @@ body {
     background-color: var(--orange);
     color: white;
     border: 1px solid #000;
-    padding: 4px;
+    padding: 3px;
     width: 50%;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .sig-zone {
     border: 1px solid #000;
-    height: 38px !important;
+    height: 40px !important;
     vertical-align: top;
     padding: 0;
 }
@@ -170,9 +174,9 @@ body {
 .sig-content {
     width: 100%;
     height: 100%;
-    padding: 5px;
-    font-size: 0.9rem;
-    line-height: 1.2;
+    padding: 4px;
+    font-size: 0.8rem;
+    line-height: 1.1;
     box-sizing: border-box;
     font-weight: bold;
     text-transform: uppercase;
@@ -182,43 +186,43 @@ body {
 .legal-notice-box {
     display: flex;
     border: 2px solid #000;
-    margin-top: 10px;
+    margin-top: 6px;
 }
 
 .legal-text {
     width: 75%;
-    padding: 4px;
+    padding: 3px;
     font-size: 0.6rem !important;
-    line-height: 1.1;
+    line-height: 1;
     border-right: 1px solid #000;
 }
 
 .legal-info {
     width: 25%;
-    padding: 4px;
+    padding: 3px;
     font-size: 0.6rem !important;
     text-align: center;
-    line-height: 1.1;
+    line-height: 1;
 }
 
 /* --- BOUTONS --- */
 .btn-area { 
     text-align: center; 
     padding: 15px; 
-    background: rgba(238, 238, 238, 0.95); /* CHANGEMENT : Ajout transparence pour visibilité du scroll */
-    position: fixed; /* CHANGEMENT : Zone toujours visible en bas de fenêtre */
+    background: rgba(238, 238, 238, 0.95);
+    position: fixed;
     bottom: 0; 
     left: 0;
     width: 100%;
     border-top: 2px solid #999; 
-    z-index: 2000; /* CHANGEMENT : Reste au premier plan */
+    z-index: 2000;
 }
 .btn { padding: 10px 20px; border: none; color: white; font-weight: bold; cursor: pointer; border-radius: 4px; margin: 0 5px; }
 .valider { background: #0056b3; }
 .pdf { background: #555; }
 .envoyer { background: #28a745; }
 
-/* --- CONFIGURATION FINALE IMPRESSION / PDF --- */
+/* --- IMPRESSION PDF --- */
 @page {
     size: A4;
     margin: 0; 
@@ -227,15 +231,13 @@ body {
 @media print {
     .no-print,
     .btn-area {
-        display: none !important; /* CHANGEMENT : Suppression totale dans le PDF */
-        visibility: hidden !important;
+        display: none !important;
     }
 
     html, body {
         background: white !important;
-        padding: 0 !important;
         margin: 0 !important;
-        width: 210mm !important;
+        padding: 0 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
@@ -243,84 +245,12 @@ body {
     .container {
         width: 190mm !important;
         max-width: 190mm !important;
-        margin: 0 auto !important;
         padding: 4mm !important;
-        border: none !important;
-        box-sizing: border-box !important;
-        transform: none !important;
-        margin-bottom: 0 !important; /* CHANGEMENT : Élimine l'espace blanc final dans le PDF */
+        margin: 0 auto !important;
     }
 
-    .main-header {
-        margin-bottom: 2mm !important;
-    }
-
-    .form-block,
-    .result-container,
-    .info-block {
-        margin-bottom: 1.5mm !important;
-    }
-
-    .q-title {
-        margin: 1.5mm 0 0.5mm 0 !important;
-        padding-bottom: 1mm !important;
-        line-height: 1 !important;
-    }
-
-    .question-card {
-        margin-bottom: 0.5mm !important;
-        padding: 0 !important;
-    }
-
-    .question-card p {
-        margin: 0 0 0.5mm 0 !important;
-        padding-bottom: 0.5mm !important;
-        font-size: 9.5pt !important;
-    }
-
-    .question-card label {
-        font-size: 9pt !important;
-        margin: 2px 0 !important;
-    }
-
-    .pictogram-img-right {
-        width: 50px !important;
-    }
-
-    .sig-zone {
-        height: 45px !important;
-    }
-
-    .legal-notice-box {
-        margin-top: 2mm !important;
-    }
-
-    .question-card,
-    .signature-table,
-    .legal-notice-box,
-    .form-block,
-    .result-container,
-    .info-block {
+    * {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-    }
-}
-#document-to-print {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 5mm;
-    box-sizing: border-box;
-}
-
-@media print {
-    body {
-        margin: 0;
-        padding: 0;
-    }
-
-    #document-to-print {
-        width: 210mm;
-        height: 297mm;
-        page-break-after: avoid;
     }
 }

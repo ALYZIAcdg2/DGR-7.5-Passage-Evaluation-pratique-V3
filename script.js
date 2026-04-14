@@ -135,25 +135,54 @@ function genererPDF() {
     const element = document.getElementById('document-to-print');
     const nomAgent = document.getElementById('nom-agent').value || "Inconnu";
 
+    // 🔥 RESET pour éviter bugs d’échelle
+    document.body.style.zoom = "1";
+
     const opt = {
         margin: 0,
         filename: `EVAL_DGR_${nomAgent.toUpperCase()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1 },
+
         html2canvas: { 
-            scale: 1.5, 
-            useCORS: true, 
-            logging: false
+            scale: 2,              // 🔥 qualité max
+            useCORS: true,
+            scrollY: 0             // 🔥 évite décalage
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all'] }
+
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait' 
+        },
+
+        pagebreak: { 
+            mode: ['avoid-all']   // 🔥 anti coupure
+        }
     };
 
-    // Masquer temporairement les zones de boutons pour le PDF propre
-    document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
+    // 🔥 Masquer boutons
+    document.querySelectorAll('.btn-area, .no-print')
+        .forEach(el => el.style.display = 'none');
+
+    // 🔥 CALCUL AUTO SCALE (clé du PERFECT)
+    const elementHeight = element.scrollHeight;
+    const elementWidth = element.scrollWidth;
+
+    const ratio = Math.min(
+        (1122 / elementHeight),   // hauteur A4 px
+        (794 / elementWidth)      // largeur A4 px
+    );
+
+    element.style.transform = `scale(${ratio})`;
+    element.style.transformOrigin = "top left";
 
     html2pdf().set(opt).from(element).save().then(() => {
-        // Réafficher les boutons
-        document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'flex');
+
+        // 🔥 reset après génération
+        element.style.transform = "scale(1)";
+
+        document.querySelectorAll('.btn-area, .no-print')
+            .forEach(el => el.style.display = 'flex');
     });
 }
 
