@@ -51,18 +51,21 @@ async def generer_pdf_dgr(data: EvalDGR):
     browser = await launch(**launch_kwargs)
     page = await browser.newPage()
     
+    # IMPORTANT : Définit une taille de fenêtre large pour éviter les coupures de rendu
+    await page.setViewport({'width': 1024, 'height': 1600})
+    
     try:
-        # On charge la page (localhost suffit car le serveur tourne en même temps)
+        # On charge la page locale
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
-        # Injection complète des données ET déclenchement du calcul de score dans le PDF
+        # Injection complète des données ET déclenchement du calcul de score
         await page.evaluate(f"""(d) => {{
-            // Remplissage des champs texte
             const setVal = (id, val) => {{
                 const el = document.getElementById(id);
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
 
+            // Remplissage des champs texte
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -72,12 +75,10 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('lieu-eval', d.lieu_eval);
             
             // Signatures
-            const sigE = document.getElementById('sig-eval');
-            if(sigE) sigE.innerText = d.sig_eval;
-            const sigS = document.getElementById('sig-stagiaire');
-            if(sigS) sigS.innerText = d.sig_stagiaire;
+            if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
+            if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // Cochage des réponses
+            // Cochage des réponses (Crucial pour le calcul du score)
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
@@ -86,23 +87,24 @@ async def generer_pdf_dgr(data: EvalDGR):
                 }}
             }}
 
-            // FORCE le calcul du score pour générer les couleurs et les points visuels
+            // FORCE le calcul du score pour générer les couleurs et les points dans le PDF
             if (typeof calculerScore === "function") {{
                 calculerScore();
             }}
 
-            // Suppression des éléments qui ne doivent pas apparaître sur le PDF
-            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.remove());
+            // Nettoyage : On masque les éléments inutiles pour le PDF
+            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.style.display = 'none');
         }}""", data.dict())
 
-        # On attend un peu plus pour être sûr que les couleurs (CSS) sont appliquées
+        # On attend que le moteur de rendu applique les couleurs et les calculs
         await asyncio.sleep(2) 
 
+        # Génération du PDF
         await page.pdf({
             'path': pdf_filename,
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '10mm', 'bottom': '10mm', 'left': '10mm', 'right': '10mm'}
+            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'} # Marges gérées par le CSS
         })
         
     finally:
