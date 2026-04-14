@@ -4,3 +4,4 @@ pydantic
 pyppeteer
 python-multipart
 httpx
+python-dotenv
