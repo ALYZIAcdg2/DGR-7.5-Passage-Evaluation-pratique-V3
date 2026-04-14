@@ -58,12 +58,11 @@ async def generer_pdf_dgr(data: EvalDGR):
         await page.goto('http://localhost:10000', {'waitUntil': 'networkidle0', 'timeout': 60000})
 
         await page.evaluate(f"""(d) => {{
+            // Remplissage texte
             const setVal = (id, val) => {{
                 const el = document.getElementById(id);
                 if(el) {{ el.value = val; el.setAttribute('value', val); }}
             }};
-
-            // 1. Remplissage des champs texte
             setVal('nom-agent', d.nom_agent);
             setVal('prenom-agent', d.prenom_agent);
             setVal('nom-eval', d.nom_eval);
@@ -71,41 +70,34 @@ async def generer_pdf_dgr(data: EvalDGR):
             setVal('fonction-eval', d.fonction_eval);
             setVal('date-eval', d.date_eval);
             setVal('lieu-eval', d.lieu_eval);
-            
-            if(document.getElementById('sig-eval')) document.getElementById('sig-eval').innerText = d.sig_eval;
-            if(document.getElementById('sig-stagiaire')) document.getElementById('sig-stagiaire').innerText = d.sig_stagiaire;
 
-            // 2. Cochage des réponses avec simulation de clic
+            // Cochage des réponses avec FORCE visuelle pour le PDF
             for (const [name, value] of Object.entries(d.reponses)) {{
                 const input = document.querySelector(`input[name="${{name}}"][value="${{value}}"]`);
                 if (input) {{
                     input.checked = true;
-                    input.setAttribute('checked', 'checked');
-                    input.dispatchEvent(new Event('change', {{ bubbles: true }})); 
-                    input.click(); 
+                    input.setAttribute('checked', 'checked'); // Indispensable pour le moteur PDF
+                    input.click(); // Déclenche les couleurs dans script.js
                 }}
             }}
 
-            // 3. Appel du calcul après un micro-délai pour laisser le DOM respirer
-            setTimeout(() => {{
-                if (typeof calculerScore === "function") {{
-                    calculerScore();
-                }}
-            }}, 100);
+            // On lance le calcul manuellement pour être sûr
+            if (typeof calculerScore === "function") {{
+                calculerScore();
+            }}
 
-            // 4. Masquer les boutons pour le PDF
-            document.querySelectorAll('.btn-area, .no-print, #custom-alert').forEach(el => el.style.display = 'none');
+            // On masque les boutons
+            document.querySelectorAll('.btn-area, .no-print').forEach(el => el.style.display = 'none');
         }}""", data.dict())
 
-        # Temps nécessaire pour que les couleurs s'appliquent 
-        await asyncio.sleep(4) 
+        # --- CHANGEMENT ICI : On attend 5 secondes complètes ---
+        await asyncio.sleep(5) 
 
-        await page.pdf({
-            'path': pdf_filename,
+        return await page.pdf({{
             'format': 'A4',
             'printBackground': True,
-            'margin': {'top': '0', 'bottom': '0', 'left': '0', 'right': '0'}
-        })
+            'margin': {{'top': '0', 'bottom': '0', 'left': '0', 'right': '0'}}
+        }})
         
     finally:
         await browser.close()

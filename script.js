@@ -23,7 +23,7 @@ function calculerScore() {
     const q1Inputs = document.querySelectorAll('input[name="q1"]');
     
     q1Inputs.forEach(input => {
-        // Reset et met en vert les bonnes solutions par défaut avec !important pour le PDF
+        // Reset et mise en vert des bonnes solutions par défaut
         if (q1Corrects.includes(input.value)) {
             input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
         } else {
@@ -40,13 +40,13 @@ function calculerScore() {
         }
     });
 
-    // Calcul des points Q1 : 20 pts si au moins une bonne réponse et aucune erreur
     const q1Points = (q1Choices.length > 0 && !q1Error) ? 20 : 0;
     score += q1Points;
     const resQ1 = document.getElementById('res-q1');
     if(resQ1) {
         resQ1.textContent = `+${q1Points} pts`;
         resQ1.style.setProperty('color', q1Points > 0 ? 'green' : 'red', 'important');
+        resQ1.style.setProperty('display', 'inline', 'important'); // Assure la visibilité
     }
 
     // --- Logique Q2 à Q5 (Boutons Radio) ---
@@ -56,7 +56,6 @@ function calculerScore() {
         const resSpan = document.getElementById(`res-${qName}`);
         
         document.querySelectorAll(`input[name="${qName}"]`).forEach(input => {
-            // Met systématiquement la bonne réponse en vert avec !important
             if (input.parentElement.textContent.includes(solutions[qName])) {
                 input.parentElement.style.setProperty('background-color', '#d4edda', 'important');
             } else {
@@ -65,9 +64,10 @@ function calculerScore() {
         });
 
         if (userChoice) {
-    // Force l'affichage du point même sur le PDF du serveur
-    userChoice.style.setProperty('outline', '2px solid blue', 'important');
-    userChoice.style.setProperty('appearance', 'auto', 'important');
+            // Force l'affichage du point bleu pour le PDF
+            userChoice.style.setProperty('outline', '2px solid blue', 'important');
+            userChoice.style.setProperty('appearance', 'auto', 'important');
+            
             const parent = userChoice.parentElement;
             if (parent.textContent.includes(solutions[qName])) {
                 score += 20;
@@ -76,27 +76,31 @@ function calculerScore() {
                     resSpan.style.setProperty('color', 'green', 'important');
                 }
             } else {
-                // APPLIQUE LE ROUGE FORCÉ SUR LE MAUVAIS CHOIX
+                // Rouge forcé sur le mauvais choix de l'agent
                 parent.style.setProperty('background-color', '#f8d7da', 'important');
                 if(resSpan) {
                     resSpan.textContent = "+0 pt";
                     resSpan.style.setProperty('color', 'red', 'important');
                 }
             }
+            if(resSpan) resSpan.style.setProperty('display', 'inline', 'important');
         }
     }
 
-    // Mise à jour des scores dans le HTML
+    // --- MISE À JOUR FINALE DES RÉSULTATS ---
     const pointsElem = document.getElementById('points-result');
     const percentElem = document.getElementById('percent-result');
     
-    if(pointsElem) pointsElem.textContent = score; 
-    if(percentElem) percentElem.textContent = score; 
+    // On force l'écriture complète du texte pour que le serveur "voie" le score
+    if(pointsElem) pointsElem.innerText = score + " / 100"; 
+    if(percentElem) percentElem.innerText = score + " %"; 
     
     const status = document.getElementById('status-result');
     if(status) {
+        // On remplace le contenu pour inclure l'icône et le texte clairement
         status.innerText = score >= 80 ? "✅ RÉUSSI" : "❌ ÉCHEC";
         status.style.setProperty('color', score >= 80 ? 'green' : 'red', 'important');
+        status.style.setProperty('font-weight', 'bold', 'important');
     }
 }
 
