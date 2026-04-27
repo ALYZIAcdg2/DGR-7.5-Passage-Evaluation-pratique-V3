@@ -42,7 +42,9 @@ async def envoyer_email(fichier_path, nom_agent):
     # 🔥 DESTINATAIRES MULTIPLES
     destinataires = [
         {"email": "xavier.oliere@alyzia.com"},   # chef
-        {"email": "estelle.inglese@alyzia.com"}               # RH (à adapter)
+        {"email": "estelle.inglese@alyzia.com"},
+        {"email": "service_formationcdg@alyzia.com"},
+        {"email": "pascale.rousseau@alyzia.com"}
     ]
 
     payload = {
