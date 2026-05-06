@@ -254,3 +254,18 @@ body {
         break-inside: avoid !important;
     }
 }
+.btn.retour {
+    background-color: #7f8c8d; /* Un gris professionnel */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 10pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+}
+
+.btn.retour:hover {
+    opacity: 0.8;
+    color: white;
+}
