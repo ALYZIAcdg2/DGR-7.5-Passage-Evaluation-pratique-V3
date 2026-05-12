@@ -54,10 +54,10 @@ async def envoyer_email(fichier_path, nom_agent):
         # 🔥 NOM EXPÉDITEUR PERSONNALISÉ
         "from": {
             "email": "alyzia.cdg2@gmail.com",
-            "name": "CBTA DGR 7.5"
+            "name": "CBTA DGR 7.5 V03"
         },
 
-        "subject": f"EVALUATION PRATIQUE DGR 7.5 - {nom_agent.upper()}",
+        "subject": f"EVALUATION PRATIQUE DGR 7.5 v3 - {nom_agent.upper()}",
 
         "content": [{
             "type": "text/plain",
